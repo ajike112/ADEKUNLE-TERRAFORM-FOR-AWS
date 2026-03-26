@@ -1,0 +1,10 @@
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+crash.log
+crash.*.log
+
+# Provider plugins
+.terraform.lock.hcl
