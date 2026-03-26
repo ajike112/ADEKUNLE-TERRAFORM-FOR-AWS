@@ -8,4 +8,4 @@ git status
 git commit -am "added terraform, provider, and resource blocks"
 
 echo "Pushing to Github Repository"
-git push
+git push -u origin master
