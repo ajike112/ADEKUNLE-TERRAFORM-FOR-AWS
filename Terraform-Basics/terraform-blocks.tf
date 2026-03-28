@@ -20,8 +20,15 @@ provider "aws" {
   profile = "adekunle.ajike"
 }
 
+## outputs Block
+output "private_dns" {
+  description = "private dns id"
+  value = aws_instance.EC2_instance.private_dns
+}
+
 ## RESOURCE BLOCK. This block is to create a resource.
 
+## Create VPC
 resource "aws_vpc" "main" {
   cidr_block       = var.cidr_block
   instance_tenancy = "default"
@@ -31,11 +38,15 @@ resource "aws_vpc" "main" {
   }
 }
 
+## Create Subnet
+resource "aws_subnet" "main" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = var.subnet_cidr
 
-
-
-
-
+  tags = {
+    Name = "Main"
+  }
+}
 
 
 ## How do I reference a variable? it would be (var.variable name)
@@ -50,4 +61,8 @@ resource "aws_instance" "EC2_instance" {
   }
 }
 
-## DATA SOURCE BLOCK. This block is used to pull down existing resources in AWS
+## DATA SOURCE BLOCK. 
+## This block is used to pull down existing values or resource attributes from the console in a targeted provider (e.g AWS)
+
+## LOCAL BLOCK.
+## Local block is used to avoid or to remove redundancy

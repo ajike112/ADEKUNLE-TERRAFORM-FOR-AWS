@@ -6,7 +6,7 @@ terraform validate (This checks and validates the terraform syntax)
 terraform plan (This is to show you the desired state of your infrastructure)
 terraform apply
 terraform destroy
-
+terraform console (This is used to output resource attribute)
 Every AWS resource should have a tag. This is a best practice.
 
 
@@ -28,6 +28,12 @@ The main reason for using variable block is to avoid HARDCODING. Avoiding hardco
 This enables to view information or get certain attributes in your resources without having to check the console or GUI. This is essential when you have no access to the GUI or the console.
 
 ## Data source Block
+Data source are used to pull down already existing values or resource attributes from the console
+
+## Local Block
+The local block is used to avoid or remove redundancy.
+
+## Module Block
 
 
 ## To push codes to GitHub
@@ -36,3 +42,5 @@ In order to push your code to GitHub, you must be in the root of your project by
 Now, use "chmod +x git-command.sh". This ensures the code has the neccessary access using the "chmod" command
 
 The perform the command "bash git-command.sh" . This will execute all the commands in the file git-command.sh
+
+

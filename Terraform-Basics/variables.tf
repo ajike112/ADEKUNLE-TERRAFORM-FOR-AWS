@@ -24,3 +24,9 @@ variable "instance_type" {
   default = "t2.micro"
 }
 
+##Create a variable for subnet cidr
+variable "subnet_cidr" { 
+    type = string 
+    description = "CIDR block for the main subnet" 
+    default = "10.0.1.0/24"
+ }
