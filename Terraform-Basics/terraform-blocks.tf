@@ -20,11 +20,6 @@ provider "aws" {
   profile = "adekunle.ajike"
 }
 
-## outputs Block
-output "private_dns" {
-  description = "private dns id"
-  value = aws_instance.EC2_instance.private_dns
-}
 
 ## RESOURCE BLOCK. This block is to create a resource.
 
