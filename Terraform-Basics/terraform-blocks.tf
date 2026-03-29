@@ -34,12 +34,43 @@ resource "aws_vpc" "main" {
 }
 
 ## Create Subnet
-resource "aws_subnet" "main" {
+resource "aws_subnet" "private1" {
   vpc_id     = aws_vpc.main.id
-  cidr_block = var.subnet_cidr
+  cidr_block = var.subnet_cidr_1
+  availability_zone = data.aws_availability_zones.available.names[0]
 
   tags = {
-    Name = "Main"
+    Name = "private1"
+  }
+}
+
+resource "aws_subnet" "private2" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = var.subnet_cidr_2
+  availability_zone = data.aws_availability_zones.available.names[1]
+
+  tags = {
+    Name = "private2"
+  }
+}
+
+resource "aws_subnet" "private3" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = var.subnet_cidr_3
+  availability_zone = data.aws_availability_zones.available.names[0]
+
+  tags = {
+    Name = "private3"
+  }
+}
+
+resource "aws_subnet" "private4" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = var.subnet_cidr_4
+  availability_zone = data.aws_availability_zones.available.names[1]
+
+  tags = {
+    Name = "private4"
   }
 }
 
@@ -58,6 +89,16 @@ resource "aws_instance" "EC2_instance" {
 
 ## DATA SOURCE BLOCK. 
 ## This block is used to pull down existing values or resource attributes from the console in a targeted provider (e.g AWS)
+## How to pull down a resource using data source # -target to 
+
+# Declare the data source
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
+
+
+
 
 ## LOCAL BLOCK.
 ## Local block is used to avoid or to remove redundancy
