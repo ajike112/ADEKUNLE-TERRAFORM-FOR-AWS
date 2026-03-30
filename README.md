@@ -44,3 +44,16 @@ Now, use "chmod +x git-command.sh". This ensures the code has the neccessary acc
 The perform the command "bash git-command.sh" . This will execute all the commands in the file git-command.sh
 
 
+## variabe Data types
+"" :> string
+[] list
+80 number
+bool true/false
+{} map
+
+## Complicated variable data types
+[""] list(string)
+[{}] list(map)
+{[]} map(list)
+
+

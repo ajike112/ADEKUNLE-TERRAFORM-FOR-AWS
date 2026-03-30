@@ -25,7 +25,7 @@ provider "aws" {
 
 ## Create VPC
 resource "aws_vpc" "main" {
-  cidr_block       = var.cidr_block
+  cidr_block       = var.vpc_cidr
   instance_tenancy = "default"
 
   tags = {
@@ -102,3 +102,7 @@ data "aws_availability_zones" "available" {
 
 ## LOCAL BLOCK.
 ## Local block is used to avoid or to remove redundancy
+
+
+## MODULE BLOCK
+## Modules are considered in Terraform as a blueprint of an infrastructure.

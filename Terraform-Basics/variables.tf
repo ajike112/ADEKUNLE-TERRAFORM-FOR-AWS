@@ -10,10 +10,10 @@ variable "ami_id" {
   default = "ami-02dfbd4ff395f2a1b"
 }
 
-## Create a variable for cidr_block
-variable "cidr_block" {
+## Create a variable for vpc cidr_block
+variable "vpc_cidr" {
   type = string
-  description = "cidr block"
+  description = "vpc cidr"
   default = "10.0.0.0/16"
 }
 
