@@ -86,6 +86,14 @@ resource "aws_instance" "EC2_instance" {
   ami           = var.ami_id 
   instance_type = var.instance_type
 
+  user_data = <<-EOF
+    #!/bin/bash
+    yum update -y
+    yum install -y httpd
+    systemctl start httpd
+    systemctl enable httpd
+  EOF
+
   tags = {
     Name = "EC2_instance"
   }
