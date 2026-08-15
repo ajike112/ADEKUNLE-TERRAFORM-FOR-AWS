@@ -274,3 +274,174 @@ data "aws_availability_zones" "available" {
 
 ## MODULE BLOCK
 ## Modules are considered in Terraform as a blueprint of an infrastructure.
+
+
+
+
+############################
+# EKS IAM ROLES
+############################
+
+# EKS Cluster Role
+resource "aws_iam_role" "eks_cluster_role" {
+  name = "${var.eks_cluster_name}-cluster-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = "eks.amazonaws.com"
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "eks_cluster_AmazonEKSClusterPolicy" {
+  role       = aws_iam_role.eks_cluster_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "eks_cluster_AmazonEKSServicePolicy" {
+  role       = aws_iam_role.eks_cluster_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
+}
+
+# EKS Node Role
+resource "aws_iam_role" "eks_node_role" {
+  name = "${var.eks_cluster_name}-node-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "AmazonEKSWorkerNodePolicy" {
+  role       = aws_iam_role.eks_node_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly" {
+  role       = aws_iam_role.eks_node_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
+
+resource "aws_iam_role_policy_attachment" "AmazonEKS_CNI_Policy" {
+  role       = aws_iam_role.eks_node_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+}
+
+############################
+# EKS CLUSTER
+############################
+
+resource "aws_eks_cluster" "eks" {
+  name     = var.eks_cluster_name
+  role_arn = aws_iam_role.eks_cluster_role.arn
+
+  vpc_config {
+    subnet_ids = [
+      aws_subnet.public1.id,
+      aws_subnet.public2.id
+    ]
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.eks_cluster_AmazonEKSClusterPolicy,
+    aws_iam_role_policy_attachment.eks_cluster_AmazonEKSServicePolicy
+  ]
+}
+
+############################
+# EKS MANAGED NODE GROUP
+############################
+
+resource "aws_eks_node_group" "eks_node_group" {
+  cluster_name    = aws_eks_cluster.eks.name
+  node_group_name = "${var.eks_cluster_name}-node-group"
+  node_role_arn   = aws_iam_role.eks_node_role.arn
+
+  subnet_ids = [
+    aws_subnet.public1.id,
+    aws_subnet.public2.id
+  ]
+
+  scaling_config {
+    desired_size = var.eks_desired_capacity
+    min_size     = var.eks_min_capacity
+    max_size     = var.eks_max_capacity
+  }
+
+  instance_types = [var.eks_node_instance_type]
+
+  depends_on = [
+    aws_eks_cluster.eks,
+    aws_iam_role_policy_attachment.AmazonEKSWorkerNodePolicy,
+    aws_iam_role_policy_attachment.AmazonEC2ContainerRegistryReadOnly,
+    aws_iam_role_policy_attachment.AmazonEKS_CNI_Policy
+  ]
+}
+
+
+resource "aws_subnet" "public1" {
+  vpc_id                  = local.vpc_id
+  cidr_block              = "10.0.10.0/24"
+  availability_zone       = data.aws_availability_zones.available.names[0]
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "public1"
+  }
+}
+
+resource "aws_subnet" "public2" {
+  vpc_id                  = local.vpc_id
+  cidr_block              = "10.0.11.0/24"
+  availability_zone       = data.aws_availability_zones.available.names[1]
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "public2"
+  }
+}
+
+
+resource "aws_internet_gateway" "igw" {
+  vpc_id = local.vpc_id
+
+  tags = {
+    Name = "main-igw"
+  }
+}
+
+
+resource "aws_route_table" "public_rt" {
+  vpc_id = local.vpc_id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
+
+  tags = {
+    Name = "public-rt"
+  }
+}
+
+resource "aws_route_table_association" "public1_assoc" {
+  subnet_id      = aws_subnet.public1.id
+  route_table_id = aws_route_table.public_rt.id
+}
+
+resource "aws_route_table_association" "public2_assoc" {
+  subnet_id      = aws_subnet.public2.id
+  route_table_id = aws_route_table.public_rt.id
+}

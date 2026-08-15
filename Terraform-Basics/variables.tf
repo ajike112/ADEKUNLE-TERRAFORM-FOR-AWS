@@ -51,3 +51,39 @@ variable "subnet_cidr_4" {
     description = "CIDR block for the main subnet" 
     default = "10.0.7.0/24"
  }
+
+
+ 
+############################
+# EKS VARIABLES
+############################
+
+variable "eks_cluster_name" {
+  type        = string
+  description = "EKS cluster name"
+  default     = "demo-eks-cluster"
+}
+
+variable "eks_node_instance_type" {
+  type        = string
+  description = "Instance type for EKS worker nodes"
+  default     = "m5.large"
+}
+
+variable "eks_desired_capacity" {
+  type        = number
+  description = "Desired number of worker nodes"
+  default     = 2
+}
+
+variable "eks_min_capacity" {
+  type        = number
+  description = "Minimum number of worker nodes"
+  default     = 1
+}
+
+variable "eks_max_capacity" {
+  type        = number
+  description = "Maximum number of worker nodes"
+  default     = 4
+}
