@@ -3,22 +3,50 @@
 ## This is a terraform version constraint. It is not backward compatible (you should not use the lower version of terraform against the current version, otherwise, bugs might be introduced into your codes).
 
 terraform {
-    required_version = ">= 1.1.0" ## This sets the condition to ignore any terraform version below 1.1.0
+  required_version = ">= 1.1.0" ## This sets the condition to ignore any terraform version below 1.1.0
 
   required_providers {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 6.0" ## This is the current AWS API version
     }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.0"
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.0"
+    }
   }
 }
+
+provider "kubernetes" {
+  host                   = local.cluster_endpoint
+  cluster_ca_certificate = base64decode(local.cluster_ca)
+  token                  = local.cluster_token
+}
+
+provider "helm" {
+  kubernetes {
+    host                   = local.cluster_endpoint
+    cluster_ca_certificate = base64decode(local.cluster_ca)
+    token                  = local.cluster_token
+  }
+}
+
+
+
 
 ## PROVIDER BLOCK. This block is mainly for authentication and authorization. We are basically allowing terraform to access our AWS
 ## This is the best practice for provider block
 provider "aws" {
-  region = "us-east-1"
+  region  = "us-east-1"
   profile = "adekunle.ajike"
 }
+
+
+
 
 
 ## RESOURCE BLOCK. This block is to create a resource.
@@ -36,8 +64,8 @@ resource "aws_vpc" "main" {
 ## Create Subnet
 resource "aws_subnet" "private1" {
   ##vpc_id     = aws_vpc.main.id
-  vpc_id     = local.vpc_id # call / reference the local
-  cidr_block = var.subnet_cidr_1
+  vpc_id            = local.vpc_id # call / reference the local
+  cidr_block        = var.subnet_cidr_1
   availability_zone = data.aws_availability_zones.available.names[0]
 
   tags = {
@@ -46,9 +74,9 @@ resource "aws_subnet" "private1" {
 }
 
 resource "aws_subnet" "private2" {
- ## vpc_id     = aws_vpc.main.id
-  vpc_id     = local.vpc_id # call / reference the local
-  cidr_block = var.subnet_cidr_2
+  ## vpc_id     = aws_vpc.main.id
+  vpc_id            = local.vpc_id # call / reference the local
+  cidr_block        = var.subnet_cidr_2
   availability_zone = data.aws_availability_zones.available.names[1]
 
   tags = {
@@ -58,8 +86,8 @@ resource "aws_subnet" "private2" {
 
 resource "aws_subnet" "private3" {
   ##vpc_id     = aws_vpc.main.id
-  vpc_id     = local.vpc_id # call / reference the local
-  cidr_block = var.subnet_cidr_3
+  vpc_id            = local.vpc_id # call / reference the local
+  cidr_block        = var.subnet_cidr_3
   availability_zone = data.aws_availability_zones.available.names[0]
 
   tags = {
@@ -69,8 +97,8 @@ resource "aws_subnet" "private3" {
 
 resource "aws_subnet" "private4" {
   ##vpc_id     = aws_vpc.main.id
-  vpc_id     = local.vpc_id
-  cidr_block = var.subnet_cidr_4 # call / reference the local
+  vpc_id            = local.vpc_id
+  cidr_block        = var.subnet_cidr_4 # call / reference the local
   availability_zone = data.aws_availability_zones.available.names[1]
 
   tags = {
@@ -81,9 +109,9 @@ resource "aws_subnet" "private4" {
 
 ## How do I reference a variable? it would be (var.variable name)
 ## Creating EC2
-           # local_name      # resource_name
+# local_name      # resource_name
 resource "aws_instance" "EC2_instance" {
-  ami           = var.ami_id 
+  ami           = var.ami_id
   instance_type = var.instance_type
 
   user_data = <<-EOF
@@ -174,7 +202,7 @@ resource "aws_ecs_service" "mongo" {
 
   load_balancer {
     target_group_arn = aws_lb_target_group.mongo_tg.arn
-    container_name   = "first"   # must match task definition
+    container_name   = "first" # must match task definition
     container_port   = 80
   }
 
@@ -193,7 +221,7 @@ resource "aws_lb" "test" {
   name               = "test-lb-tf"
   internal           = true
   load_balancer_type = "application"
-  subnets            = [
+  subnets = [
     aws_subnet.private1.id,
     aws_subnet.private2.id
   ]
@@ -313,6 +341,35 @@ resource "aws_iam_role" "eks_node_role" {
   name = "${var.eks_cluster_name}-node-role"
 
   assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Principal = { Service = "ec2.amazonaws.com" },
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+
+resource "aws_iam_role_policy_attachment" "eks_worker_node_policy_attachment" {
+  role       = aws_iam_role.eks_node_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "eks_cni_policy_attachment" {
+  role       = aws_iam_role.eks_node_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+}
+
+resource "aws_iam_role_policy_attachment" "eks_registry_policy_attachment" {
+  role       = aws_iam_role.eks_node_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
+
+resource "aws_iam_role" "alb_controller_role" {
+  name = "${var.eks_cluster_name}-alb-controller-role"
+
+  assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
       Effect = "Allow"
@@ -322,22 +379,10 @@ resource "aws_iam_role" "eks_node_role" {
       Action = "sts:AssumeRole"
     }]
   })
+
 }
 
-resource "aws_iam_role_policy_attachment" "AmazonEKSWorkerNodePolicy" {
-  role       = aws_iam_role.eks_node_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-}
 
-resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly" {
-  role       = aws_iam_role.eks_node_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-}
-
-resource "aws_iam_role_policy_attachment" "AmazonEKS_CNI_Policy" {
-  role       = aws_iam_role.eks_node_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-}
 
 ############################
 # EKS CLUSTER
@@ -347,12 +392,31 @@ resource "aws_eks_cluster" "eks" {
   name     = var.eks_cluster_name
   role_arn = aws_iam_role.eks_cluster_role.arn
 
+  version = "1.35"
+
   vpc_config {
     subnet_ids = [
       aws_subnet.public1.id,
       aws_subnet.public2.id
     ]
+
+  endpoint_public_access = true
   }
+
+  enabled_cluster_log_types = [
+    "api",
+    "audit",
+    "authenticator",
+    "controllerManager",
+    "scheduler"
+  ]
+
+  tags = {
+  Name        = var.eks_cluster_name
+  Environment = "dev"
+  Terraform   = "true"
+}
+
 
   depends_on = [
     aws_iam_role_policy_attachment.eks_cluster_AmazonEKSClusterPolicy,
@@ -360,9 +424,45 @@ resource "aws_eks_cluster" "eks" {
   ]
 }
 
+###############################################
+## ALB CONTROLLER AND EBS CSI DRIVER OIDC PROVIDER
+#################################################
+data "aws_eks_cluster" "eks" {
+  name = aws_eks_cluster.eks.name
+}
+
+resource "aws_iam_openid_connect_provider" "eks" {
+  url = data.aws_eks_cluster.eks.identity[0].oidc[0].issuer
+
+  client_id_list = ["sts.amazonaws.com"]
+
+  thumbprint_list = ["9e99a48a9960b14926bb7f3b02e22da0afd0e3b0"]
+}
+
 ############################
 # EKS MANAGED NODE GROUP
 ############################
+
+resource "aws_launch_template" "eks_nodes" {
+  name = "${var.eks_cluster_name}-lt"
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "optional"
+    http_put_response_hop_limit = 2
+  }
+
+   block_device_mappings {
+    device_name = "/dev/xvda"
+
+    ebs {
+      volume_size = 20
+      volume_type = "gp3"
+    }
+  }
+}
+
+
 
 resource "aws_eks_node_group" "eks_node_group" {
   cluster_name    = aws_eks_cluster.eks.name
@@ -381,13 +481,32 @@ resource "aws_eks_node_group" "eks_node_group" {
   }
 
   instance_types = [var.eks_node_instance_type]
+  ami_type =  "AL2023_x86_64_STANDARD"
 
-  depends_on = [
-    aws_eks_cluster.eks,
-    aws_iam_role_policy_attachment.AmazonEKSWorkerNodePolicy,
-    aws_iam_role_policy_attachment.AmazonEC2ContainerRegistryReadOnly,
-    aws_iam_role_policy_attachment.AmazonEKS_CNI_Policy
-  ]
+
+  update_config {
+  max_unavailable = 1
+  }
+
+force_update_version = true
+
+  launch_template {
+    id      = aws_launch_template.eks_nodes.id
+    version = "$Latest"
+  }
+
+  tags = {
+  "kubernetes.io/cluster/${var.eks_cluster_name}" = "owned"
+  "Name" = "${var.eks_cluster_name}-node-group"
+}
+
+ depends_on = [
+  aws_eks_cluster.eks,
+  aws_iam_role_policy_attachment.eks_worker_node_policy_attachment,
+  aws_iam_role_policy_attachment.eks_cni_policy_attachment,
+  aws_iam_role_policy_attachment.eks_registry_policy_attachment
+ ]
+
 }
 
 
@@ -444,4 +563,82 @@ resource "aws_route_table_association" "public1_assoc" {
 resource "aws_route_table_association" "public2_assoc" {
   subnet_id      = aws_subnet.public2.id
   route_table_id = aws_route_table.public_rt.id
+}
+
+
+
+###############################
+## EKS DATA SOURCES
+###############################
+
+
+data "aws_eks_cluster_auth" "eks" {
+  name = aws_eks_cluster.eks.name
+}
+
+locals {
+  cluster_endpoint = data.aws_eks_cluster.eks.endpoint
+  cluster_ca       = data.aws_eks_cluster.eks.certificate_authority[0].data
+  cluster_token    = data.aws_eks_cluster_auth.eks.token
+  cluster_name     = aws_eks_cluster.eks.name
+}
+
+###########################################################
+# ALB CONTROLLER IAM ROLE (ROOT MODULE)
+###########################################################
+
+
+resource "aws_iam_policy" "alb_controller_policy" {
+  name   = "${var.eks_cluster_name}-alb-controller-policy"
+  policy = file("${path.module}/iam-policies/aws-load-balancer-controller-policy.json")
+}
+
+resource "aws_iam_role_policy_attachment" "alb_controller_policy_attachment" {
+  role       = aws_iam_role.alb_controller_role.name
+  policy_arn = aws_iam_policy.alb_controller_policy.arn
+}
+
+# ##########################################################
+# PASS IAM ROLE INTO K8S-ADDONS MODULE
+# ##########################################################
+
+module "k8s_addons" {
+  source = "./k8s-modules/k8s-addons"
+
+  cluster_endpoint = local.cluster_endpoint
+  cluster_ca       = local.cluster_ca
+  cluster_token    = local.cluster_token
+  cluster_name     = local.cluster_name
+  alb_controller_role_arn = aws_iam_role.alb_controller_role.arn
+}
+
+
+output "alb_controller_role_arn" {
+  value = aws_iam_role.alb_controller_role.arn
+}
+
+
+######################################
+# STORAGE CLASS
+######################################
+resource "kubernetes_storage_class_v1" "gp3" {
+  provider = kubernetes
+
+  metadata {
+    name = "gp3"
+  
+    annotations = {
+      "storageclass.kubernetes.io/is-default-class" = "true"
+    }
+  }
+
+  storage_provisioner = "ebs.csi.aws.com"
+
+  volume_binding_mode = "WaitForFirstConsumer"
+
+  parameters = {
+    type = "gp3"
+  }
+
+  allow_volume_expansion = true
 }

@@ -1,0 +1,49 @@
+loki:
+  auth_enabled: false
+
+  server:
+    http_listen_port: 3100
+
+  memberlist:
+    join_members:
+      - loki-loki-distributed-memberlist
+
+  distributor:
+    ring:
+      kvstore:
+        store: memberlist
+
+  ingester:
+    lifecycler:
+      ring:
+        kvstore:
+          store: memberlist
+    chunk_idle_period: 5m
+    chunk_retain_period: 30s
+    max_transfer_retries: 0
+
+  schema_config:
+    configs:
+      - from: "2024-04-01"
+        store: tsdb
+        object_store: aws
+        schema: v13
+        index:
+          prefix: index_
+          period: 24h
+
+  storage_config:
+    aws:
+      s3:
+        bucketnames:
+          - mybucket-ajike
+        region: us-east-1
+
+    tsdb_shipper:
+      active_index_directory: /var/loki/index
+      cache_location: /var/loki/cache
+      shared_store: s3
+
+  limits_config:
+    ingestion_rate_mb: 10
+    ingestion_burst_size_mb: 20
