@@ -41,7 +41,7 @@ provider "helm" {
 ## PROVIDER BLOCK. This block is mainly for authentication and authorization. We are basically allowing terraform to access our AWS
 ## This is the best practice for provider block
 provider "aws" {
-  region  = "us-east-1"
+  region  = var.region
   profile = "adekunle.ajike"
 }
 
@@ -605,17 +605,29 @@ resource "aws_iam_role_policy_attachment" "alb_controller_policy_attachment" {
 module "k8s_addons" {
   source = "./k8s-modules/k8s-addons"
 
+  region = var.region
   cluster_endpoint = local.cluster_endpoint
   cluster_ca       = local.cluster_ca
   cluster_token    = local.cluster_token
   cluster_name     = local.cluster_name
+  
   alb_controller_role_arn = aws_iam_role.alb_controller_role.arn
+  alb_controller_policy_attachment_dep = aws_iam_role_policy_attachment.alb_controller_policy_attachment.id
+  eks_node_group_dep = aws_eks_node_group.eks_node_group.id
+  oidc_provider_dep  = aws_iam_openid_connect_provider.eks.id
+
+  depends_on = [
+    aws_eks_cluster.eks,
+    aws_eks_node_group.eks_node_group
+  ]
 }
+
 
 
 output "alb_controller_role_arn" {
   value = aws_iam_role.alb_controller_role.arn
 }
+
 
 
 ######################################

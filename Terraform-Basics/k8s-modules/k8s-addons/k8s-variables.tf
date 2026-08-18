@@ -28,3 +28,22 @@ variable "alb_controller_role_arn" {
   description = "IAM role ARN for ALB controller"
 }
 
+variable "alb_controller_policy_attachment_dep" {
+  type = string
+}
+
+variable "eks_node_group_dep" {
+  type = string
+}
+
+variable "oidc_provider_dep" {
+  type = string
+}
+
+variable "region" {
+  type        = string
+  description = "AWS region for ALB controller"
+}
+
+
+
