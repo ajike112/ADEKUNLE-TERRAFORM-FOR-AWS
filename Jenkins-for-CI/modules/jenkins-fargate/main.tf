@@ -22,15 +22,26 @@ resource "aws_efs_mount_target" "jenkins_efs_mt" {
 
   file_system_id  = aws_efs_file_system.jenkins_efs.id
   subnet_id       = each.value
-  security_groups = [var.jenkins_sg_id]
+  security_groups = [var.efs_sg_id]
+
+  lifecycle {
+  create_before_destroy = true
 }
+
+}
+
 
 # ALB for Jenkins
 resource "aws_lb" "jenkins_alb" {
   name               = "jenkins-alb"
   load_balancer_type = "application"
-  security_groups    = [var.jenkins_sg_id]
+  security_groups    = [var.alb_sg_id]
   subnets            = var.public_subnet_ids
+
+  lifecycle {
+  create_before_destroy = true
+}
+
 
   tags = {
     Name = "jenkins-alb"
@@ -51,8 +62,8 @@ resource "aws_lb_target_group" "jenkins_tg" {
     matcher             = "200-399"
     interval            = 30
     timeout             = 5
-    healthy_threshold   = 3
-    unhealthy_threshold = 3
+    healthy_threshold   = 2
+    unhealthy_threshold = 5
   }
 
   tags = {
@@ -194,6 +205,7 @@ resource "aws_ecs_task_definition" "jenkins_fargate_task" {
           readOnly      = false
         }
       ]
+
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -230,11 +242,13 @@ resource "aws_ecs_service" "jenkins_service" {
   launch_type     = "FARGATE"
   desired_count   = 1
   enable_execute_command = true
-
+  
+# Allow Jenkins time to boot before ALB health checks
+  health_check_grace_period_seconds = 180
 
   network_configuration {
     subnets         = values(var.private_subnet_ids)
-    security_groups = [var.jenkins_sg_id]
+    security_groups = [var.task_sg_id]
     assign_public_ip = false
   }
 

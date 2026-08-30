@@ -141,37 +141,50 @@ resource "aws_route_table_association" "jenkins_public_2_assoc" {
   route_table_id = aws_route_table.jenkins_public_rt.id
 }
 
-# Security group for ALB and Jenkins
-resource "aws_security_group" "jenkins_sg" {
-  name        = "jenkins-sg"
-  description = "Allow HTTP/HTTPS to Jenkins"
+###########################################
+# ALB SECURITY GROUP (PUBLIC FACING)
+###########################################
+resource "aws_security_group" "jenkins_alb_sg" {
+  name        = "jenkins-alb-sg"
+  description = "Public ALB SG for Jenkins"
   vpc_id      = aws_vpc.jenkins_vpc.id
 
   ingress {
-    description = "HTTP"
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # If you want ALB on 80 → forward to 8080
-  ingress {
-    description = "ALB health checks"
+    description = "Allow HTTP from anywhere"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-ingress {
-  description = "Allow NFS from ECS tasks to EFS"
-  from_port   = 2049
-  to_port     = 2049
-  protocol    = "tcp"
-  cidr_blocks = ["10.20.0.0/16"] # or your VPC CIDR
+  egress {
+    description = "Allow all outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "jenkins-alb-sg"
+  }
 }
 
+#####################################
+# EFS Security Group
+#####################################
+resource "aws_security_group" "jenkins_efs_sg" {
+  name        = "jenkins-efs-sg"
+  description = "Allow NFS from Jenkins ECS tasks"
+  vpc_id      = aws_vpc.jenkins_vpc.id
+
+  ingress {
+    description     = "Allow NFS from Jenkins task SG"
+    from_port       = 2049
+    to_port         = 2049
+    protocol        = "tcp"
+    security_groups = [aws_security_group.jenkins_task_sg.id]
+  }
 
   egress {
     from_port   = 0
@@ -181,9 +194,50 @@ ingress {
   }
 
   tags = {
-    Name = "jenkins-sg"
+    Name = "jenkins-efs-sg"
   }
 }
+
+
+##########################################
+# JENKINS ECS TASK SECURITY GROUP (PRIVATE)
+##########################################
+
+resource "aws_security_group" "jenkins_task_sg" {
+  name        = "jenkins-task-sg"
+  description = "Private SG for Jenkins ECS tasks"
+  vpc_id      = aws_vpc.jenkins_vpc.id
+
+  ingress {
+    description     = "Allow ALB to reach Jenkins on port 8080"
+    from_port       = 8080
+    to_port         = 8080
+    protocol        = "tcp"
+    security_groups = [aws_security_group.jenkins_alb_sg.id]
+  }
+
+  ingress {
+    description = "Allow NFS traffic to EFS"
+    from_port   = 2049
+    to_port     = 2049
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  egress {
+    description = "Allow all outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "jenkins-task-sg"
+  }
+}
+
+
 
 # ─────────────────────────────────────────────────────────────
 # Call the Jenkins Fargate module
@@ -204,9 +258,14 @@ public_subnet_ids = [
   aws_subnet.jenkins_public_2.id
 ]
 
-  jenkins_sg_id          = aws_security_group.jenkins_sg.id
+  
+  alb_sg_id  = aws_security_group.jenkins_alb_sg.id
+  task_sg_id = aws_security_group.jenkins_task_sg.id
+  efs_sg_id  = aws_security_group.jenkins_efs_sg.id
+
+
   jenkins_fargate_cpu    = var.jenkins_fargate_cpu
   jenkins_fargate_memory = var.jenkins_fargate_memory
-  jenkins_admin_user = var.jenkins_admin_user
-  jenkins_admin_pass = var.jenkins_admin_pass
+  jenkins_admin_user     =var.jenkins_admin_user
+  jenkins_admin_pass     = var.jenkins_admin_pass
 }

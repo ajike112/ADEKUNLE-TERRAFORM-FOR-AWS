@@ -10,10 +10,21 @@ variable "vpc_id" {
 
 
 
-variable "jenkins_sg_id" {
+variable "alb_sg_id" {
   type        = string
-  description = "Security group ID for Jenkins"
+  description = "Security group ID for the ALB"
 }
+
+variable "task_sg_id" {
+  type        = string
+  description = "Security group ID for Jenkins ECS tasks"
+}
+
+variable "efs_sg_id" {
+  type        = string
+  description = "Security group ID for EFS mount targets"
+}
+
 
 variable "jenkins_fargate_cpu" {
   type        = number
