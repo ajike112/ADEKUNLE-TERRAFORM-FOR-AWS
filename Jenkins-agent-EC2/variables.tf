@@ -25,6 +25,11 @@ variable "jenkins_master_cidr" {
 }
 
 variable "ssh_cidr" {
+  description = "Laptop IP for SSH"
   type        = string
-  description = "CIDR allowed for SSH access"
+}
+
+variable "ubuntu_ami" {
+  description = "Ubuntu AMI ID"
+  type        = string
 }

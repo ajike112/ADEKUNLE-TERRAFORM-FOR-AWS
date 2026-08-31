@@ -1,3 +1,4 @@
+
 terraform {
   required_version = ">= 1.5.0"
 
@@ -14,62 +15,52 @@ provider "aws" {
 }
 
 ############################################
-# Dedicated VPC for Jenkins Agent
+# Reference Existing Jenkins Master VPC (ECS)
 ############################################
-resource "aws_vpc" "jenkins_vpc" {
-  cidr_block           = "10.50.0.0/16"
-  enable_dns_support   = true
-  enable_dns_hostnames = true
-
-  tags = {
-    Name = "jenkins-agent-vpc"
-  }
+data "aws_vpc" "ecs_vpc" {
+  id = "vpc-0b006ee0953dbb28e"   # Replace with your ECS VPC ID
 }
 
 ############################################
-# Internet Gateway
+# Public Subnet for Jenkins Agent
 ############################################
-resource "aws_internet_gateway" "jenkins_igw" {
-  vpc_id = aws_vpc.jenkins_vpc.id
-
-  tags = {
-    Name = "jenkins-agent-igw"
-  }
-}
-
-############################################
-# Public Subnet
-############################################
-resource "aws_subnet" "jenkins_public_subnet" {
-  vpc_id                  = aws_vpc.jenkins_vpc.id
-  cidr_block              = "10.50.10.0/24"
+resource "aws_subnet" "jenkins_agent_subnet" {
+  vpc_id                  = data.aws_vpc.ecs_vpc.id
+  cidr_block              = "10.20.60.0/24"
   availability_zone       = "us-east-1a"
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "jenkins-agent-public"
+    Name = "jenkins-agent-subnet"
+  }
+}
+
+data "aws_internet_gateway" "ecs_igw" {
+  filter {
+    name   = "attachment.vpc-id"
+    values = [data.aws_vpc.ecs_vpc.id]
   }
 }
 
 ############################################
 # Route Table + Association
 ############################################
-resource "aws_route_table" "jenkins_public_rt" {
-  vpc_id = aws_vpc.jenkins_vpc.id
+resource "aws_route_table" "jenkins_agent_rt" {
+  vpc_id = data.aws_vpc.ecs_vpc.id
 
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.jenkins_igw.id
+    gateway_id = data.aws_internet_gateway.ecs_igw.id
   }
 
   tags = {
-    Name = "jenkins-agent-public-rt"
+    Name = "jenkins-agent-rt"
   }
 }
 
-resource "aws_route_table_association" "jenkins_public_assoc" {
-  subnet_id      = aws_subnet.jenkins_public_subnet.id
-  route_table_id = aws_route_table.jenkins_public_rt.id
+resource "aws_route_table_association" "jenkins_agent_assoc" {
+  subnet_id      = aws_subnet.jenkins_agent_subnet.id
+  route_table_id = aws_route_table.jenkins_agent_rt.id
 }
 
 ############################################
@@ -78,22 +69,25 @@ resource "aws_route_table_association" "jenkins_public_assoc" {
 resource "aws_security_group" "jenkins_agent_sg" {
   name        = "jenkins-agent-sg"
   description = "Security group for Jenkins agent EC2"
-  vpc_id      = aws_vpc.jenkins_vpc.id
+  vpc_id      = data.aws_vpc.ecs_vpc.id
+
+  ingress {
+  description = "Allow SSH from laptop"
+  from_port   = 22
+  to_port     = 22
+  protocol    = "tcp"
+  cidr_blocks = [
+     "98.194.47.86/32", 
+     "52.55.37.179/32"
+  ] # my laptop IP and Jenkins Service IP
+}
 
   ingress {
     description = "Allow Jenkins master to connect via JNLP"
     from_port   = 50000
     to_port     = 50000
     protocol    = "tcp"
-    cidr_blocks = var.jenkins_master_cidr
-  }
-
-  ingress {
-    description = "SSH access from laptop"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.ssh_cidr]
+    cidr_blocks = ["10.20.0.0/16"]
   }
 
   egress {
@@ -159,7 +153,7 @@ resource "aws_iam_instance_profile" "jenkins_agent_profile" {
 resource "aws_instance" "jenkins_agent" {
   ami                    = var.ami_id
   instance_type          = var.instance_type
-  subnet_id              = aws_subnet.jenkins_public_subnet.id
+  subnet_id              = aws_subnet.jenkins_agent_subnet.id
   vpc_security_group_ids = [aws_security_group.jenkins_agent_sg.id]
   iam_instance_profile   = aws_iam_instance_profile.jenkins_agent_profile.name
   key_name               = var.key_name
