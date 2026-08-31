@@ -3,10 +3,12 @@ pipeline {
 
     environment {
         AWS_REGION      = "us-east-1"
-        ECR_ACCOUNT_ID  = "123456789012"
+        ECR_ACCOUNT_ID  = "536697262404"
         ECR_REPO        = "jenkins-app-repo"
         ECR_URL         = "${ECR_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}"
         SONARQUBE_ENV   = "SonarQube"     // Jenkins SonarQube server name
+        SONAR_TOKEN = credentials('sonar-token')
+
     }
 
     stages {
@@ -34,7 +36,8 @@ pipeline {
                       --project jenkins-app \
                       --scan . \
                       --format HTML \
-                      --out dependency-check-report
+                      --out dependency-check-report \
+                      --data /tmp/odc-data
                 """
             }
             post {
@@ -51,7 +54,8 @@ pipeline {
                         echo "Running SonarQube scan..."
                         mvn sonar:sonar \
                           -Dsonar.projectKey=jenkins-app \
-                          -Dsonar.host.url=http://your-sonarqube-url:9000
+                          -Dsonar.host.url=http://sonarqube-alb-dev-2096794737.us-east-1.elb.amazonaws.com \
+                          -Dsonar.login=${SONAR_TOKEN}
                     """
                 }
             }
@@ -81,7 +85,7 @@ pipeline {
 
                     sh """
                         echo "Building Docker image..."
-                        docker build -t ${ECR_REPO}:${IMAGE_TAG} .
+                        docker build -t ${ECR_URL}:${IMAGE_TAG} .
                     """
                 }
             }
@@ -91,7 +95,7 @@ pipeline {
             steps {
                 sh """
                     echo "Running Trivy image scan..."
-                    trivy image --exit-code 1 --severity HIGH,CRITICAL ${ECR_REPO}:${IMAGE_TAG}
+                    trivy image --exit-code 1 --severity HIGH,CRITICAL ${ECR_URL}:${IMAGE_TAG}
                 """
             }
         }
