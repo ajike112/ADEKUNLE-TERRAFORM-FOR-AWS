@@ -77,9 +77,7 @@ pipeline {
 
                     rm -rf dependency-check-report
                     mkdir -p dependency-check-report
-
-                    # Ensure clean database directory
-                    rm -rf /tmp/odc-data
+                    
                     mkdir -p /tmp/odc-data
 
                     export JAVA_OPTS="-Xmx2g"
