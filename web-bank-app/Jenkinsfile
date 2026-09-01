@@ -188,7 +188,7 @@ pipeline {
         success {
             echo "CI pipeline completed successfully. Image tag: ${env.IMAGE_TAG}"
 
-            mail to: 'adekunlegorioye@gmail.com',
+            mail to: 'adekunleajike@gmail.com',
                  subject: "Jenkins Pipeline SUCCESS — Build #${env.BUILD_NUMBER}",
                  body: """
 Hello Adekunle,
@@ -208,7 +208,7 @@ Jenkins CI/CD
         failure {
             echo "CI pipeline failed. Check OWASP, SonarQube, or Trivy results."
 
-            mail to: 'adekunlegorioye@gmail.com',
+            mail to: 'adekunleajike@gmail.com',
                  subject: "Jenkins Pipeline FAILURE — Build #${env.BUILD_NUMBER}",
                  body: """
 Hello Adekunle,
