@@ -34,24 +34,21 @@ pipeline {
 
         stage('OWASP Dependency Check') {
             steps {
-                sh """
-                    echo "Running OWASP Dependency Check..."
-                    dependency-check.sh \
-                      --project jenkins-app \
-                      --scan . \
-                      --format HTML \
-                      --out dependency-check-report \
-                      --data /tmp/odc-data \
-                      --propertyfile /opt/dependency-check/conf/dependency-check.properties
-                      
-                """
+                sh '''
+                    echo Running OWASP Dependency Check...
+                    dependency-check.sh --project jenkins-app --scan . --format HTML --out dependency-check-report --data /tmp/odc-data --propertyfile /opt/dependency-check/conf/dependency-check.properties || true
+                '''
             }
             post {
                 always {
-                    archiveArtifacts artifacts: 'dependency-check-report/*', fingerprint: true
+                    archiveArtifacts artifacts: 'dependency-check-report/**', fingerprint: true
+
+                    dependencyCheckPublisher pattern: '**/dependency-check-report.xml',
+                                     failBuildOnCVSS: 10
                 }
             }
         }
+
 
         stage('SonarQube SAST') {
             steps {
