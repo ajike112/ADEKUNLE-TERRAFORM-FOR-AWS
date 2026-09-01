@@ -76,6 +76,11 @@ pipeline {
             steps {
                 sh '''
                     echo "Running OWASP Dependency Check..."
+
+                     # Ensure clean database directory
+                     rm -rf /tmp/odc-data
+                     mkdir -p /tmp/odc-data
+
                     dependency-check.sh \
                       --project jenkins-app \
                       --scan . \
