@@ -77,13 +77,15 @@ pipeline {
 
                     rm -rf dependency-check-report
                     mkdir -p dependency-check-report
-
+                    
+                    # DO NOT DELETE /tmp/odc-data when using --noupdate
                     mkdir -p /tmp/odc-data
 
                     export JAVA_OPTS="-Xmx2g"
                     dependency-check.sh \
                       --project jenkins-app \
                       --scan . \
+                      --noupdate \
                       -f HTML \
                       -f XML \
                       --out dependency-check-report \
