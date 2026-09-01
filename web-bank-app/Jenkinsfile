@@ -44,7 +44,7 @@ pipeline {
                     archiveArtifacts artifacts: 'dependency-check-report/**', fingerprint: true
 
                     dependencyCheckPublisher pattern: '**/dependency-check-report.xml',
-                                     failBuildOnCVSS: 10
+                                     failBuildOnCVSS: 7
                 }
             }
         }
