@@ -1,4 +1,3 @@
-
 pipeline {
     agent { label 'docker-agent' }
 
@@ -19,36 +18,42 @@ pipeline {
             }
         }
 
-       stage('Build & Unit Tests') {
-           steps {
-               dir('web-bank-app') {
-                   sh """
-                       echo "Installing dependencies and running tests..."
-                       npm install
-                       npm test
+        stage('Build & Unit Tests') {
+            steps {
+                dir('web-bank-app') {
+                    sh """
+                        echo "Installing dependencies and running tests..."
+                        npm install
+                        npm test
                     """
                 }
             }
         }
 
-
         stage('OWASP Dependency Check') {
             steps {
                 sh '''
-                    echo Running OWASP Dependency Check...
-                    dependency-check.sh --project jenkins-app --scan . --format HTML --out dependency-check-report --data /tmp/odc-data --propertyfile /opt/dependency-check/conf/dependency-check.properties || true
+                    echo "Running OWASP Dependency Check..."
+                    dependency-check.sh \
+                      --project jenkins-app \
+                      --scan . \
+                      --format "HTML,XML" \
+                      --out dependency-check-report \
+                      --data /tmp/odc-data \
+                      --propertyfile /opt/dependency-check/conf/dependency-check.properties || true
                 '''
             }
             post {
                 always {
                     archiveArtifacts artifacts: 'dependency-check-report/**', fingerprint: true
 
-                    dependencyCheckPublisher pattern: '**/dependency-check-report.xml',
-                                     failBuildOnCVSS: 7
+                    dependencyCheckPublisher(
+                        pattern: 'dependency-check-report/dependency-check-report.xml',
+                        failBuildOnCVSS: 7
+                    )
                 }
             }
         }
-
 
         stage('SonarQube SAST') {
             steps {
@@ -123,9 +128,46 @@ pipeline {
     post {
         success {
             echo "CI pipeline completed successfully. Image tag: ${env.IMAGE_TAG}"
+
+            mail to: 'adekunlegorioye@gmail.com',
+                 subject: "Jenkins Pipeline SUCCESS — Build #${env.BUILD_NUMBER}",
+                 body: """
+Hello Adekunle,
+
+Your Jenkins CI pipeline completed successfully.
+
+Image Tag: ${env.IMAGE_TAG}
+Repository: ${ECR_REPO}
+
+OWASP Report (HTML):
+${env.BUILD_URL}artifact/dependency-check-report/dependency-check-report.html
+
+Regards,
+Jenkins CI/CD
+"""
         }
         failure {
             echo "CI pipeline failed. Check OWASP, SonarQube, or Trivy results."
+
+            mail to: 'adekunlegorioye@gmail.com',
+                 subject: "Jenkins Pipeline FAILURE — Build #${env.BUILD_NUMBER}",
+                 body: """
+Hello Adekunle,
+
+Your Jenkins CI pipeline FAILED.
+
+Please review the following stages:
+- OWASP Dependency Check (CVSS threshold: 7)
+- SonarQube SAST & Quality Gate
+- Trivy Filesystem Scan
+- Trivy Image Scan
+
+OWASP Report (HTML):
+${env.BUILD_URL}artifact/dependency-check-report/dependency-check-report.html
+
+Regards,
+Jenkins CI/CD
+"""
         }
     }
 }
