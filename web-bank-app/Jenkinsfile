@@ -18,6 +18,48 @@ pipeline {
             }
         }
 
+        stage('Conditional Cleanup (Disk < 5GB)') {
+            steps {
+                script {
+                    // Get free disk space in MB
+                    def freeMB = sh(
+                       script: "df -m / | awk 'NR==2 {print \$4}'",
+                       returnStdout: true
+                    ).trim() as Integer
+
+                    echo "Free disk space: ${freeMB} MB"
+
+                   // Run cleanup only if free space < 5000 MB (5GB)
+                   if (freeMB < 5000) {
+                       echo "Disk space below 5GB — running cleanup..."
+
+                       sh """
+                           # Remove dangling Docker images
+                           docker image prune -f
+
+                           # Remove unused Docker containers
+                           docker container prune -f
+
+                           # Remove unused Docker volumes
+                           docker volume prune -f
+
+                           # Remove unused Docker build cache
+                           docker builder prune -af
+
+                           # Clean Jenkins workspace temp directories
+                           rm -rf /home/ubuntu/jenkins/workspace/*@tmp || true
+
+                           echo "Cleanup complete."
+                        """
+                    } else {
+                        echo "Disk space is healthy — skipping cleanup."
+                    }
+                }
+            }
+        }
+
+
+
         stage('Build & Unit Tests') {
             steps {
                 dir('web-bank-app') {
