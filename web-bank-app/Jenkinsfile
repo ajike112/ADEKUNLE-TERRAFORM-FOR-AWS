@@ -98,6 +98,13 @@ pipeline {
                     dependencyCheckPublisher(
                         pattern: 'dependency-check-report/dependency-check-report.xml',
                         failBuildOnCVSS: 7
+
+                    recordIssues(
+                        tool: dependencyCheck(pattern: 'dependency-check-report/dependency-check-report.xml'),
+                        failedTotalHigh: 1,
+                        failedTotalCritical: 1
+                    )
+    
                     )
                 }
             }
