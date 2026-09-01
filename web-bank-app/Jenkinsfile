@@ -85,7 +85,6 @@ pipeline {
                     dependency-check.sh \
                       --project jenkins-app \
                       --scan . \
-                      --noupdate \
                       -f HTML \
                       -f XML \
                       --out dependency-check-report \
