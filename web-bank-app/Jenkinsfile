@@ -89,21 +89,26 @@ pipeline {
                       -f XML \
                       --out dependency-check-report \
                       --data /tmp/odc-data \
-                      --propertyfile /opt/dependency-check/conf/dependency-check.properties || true
+                      --propertyfile /opt/dependency-check/conf/dependency-check.properties 
+
+                    EXIT_CODE=$?
+
+                    echo "OWASP exit code: $EXIT_CODE"
+
+                    # Fail the build manually if OWASP found HIGH/CRITICAL issues
+                    if [ $EXIT_CODE -ne 0 ]; then
+                        echo "OWASP found vulnerabilities. Failing the build."
+                        exit 1
+                    fi  
                 '''
             }
             post {
                 always {
-                    // Allow pipeline to continue even if no report was produced
                     archiveArtifacts artifacts: 'dependency-check-report/**',
                                       fingerprint: true,
                                       allowEmptyArchive: true
 
-                     recordIssues(
-                         tool: dependencyCheck(pattern: 'dependency-check-report/dependency-check-report.xml'),
-                         failedTotalHigh: 1,
-                         failedTotalCritical: 1
-                     )
+                     
                 }
             }
         }
