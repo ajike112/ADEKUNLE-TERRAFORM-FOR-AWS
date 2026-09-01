@@ -23,8 +23,9 @@ pipeline {
            steps {
                dir('web-bank-app') {
                    sh """
-                       echo "Running build and unit tests..."
-                       mvn clean install
+                       echo "Installing dependencies and running tests..."
+                       npm install
+                       npm test
                     """
                 }
             }
