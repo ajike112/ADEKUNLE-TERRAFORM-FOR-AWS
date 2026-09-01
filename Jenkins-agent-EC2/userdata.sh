@@ -36,3 +36,20 @@ sudo chown ubuntu:ubuntu /home/ubuntu/jenkins
 # Install Maven
 sudo apt-get install -y maven
 
+# Install Node.js and npm
+sudo apt-get install -y nodejs npm
+
+# Install OWASP Dependency check
+sudo apt-get install -y dependency-check
+
+apt-get update -y
+apt-get install -y unzip wget
+
+cd /opt
+wget https://github.com/jeremylong/DependencyCheck/releases/download/v8.4.0/dependency-check-8.4.0-release.zip
+unzip dependency-check-8.4.0-release.zip -d dependency-check
+
+# Correct symlink path
+ln -s /opt/dependency-check/dependency-check/bin/dependency-check.sh /usr/local/bin/dependency-check.sh
+
+
