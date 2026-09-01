@@ -79,7 +79,7 @@ pipeline {
                     dependency-check.sh \
                       --project jenkins-app \
                       --scan . \
-                      -f HTML
+                      -f HTML \
                       -f XML \
                       --out dependency-check-report \
                       --data /tmp/odc-data \
