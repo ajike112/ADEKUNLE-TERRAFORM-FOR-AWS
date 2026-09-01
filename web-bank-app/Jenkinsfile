@@ -79,7 +79,8 @@ pipeline {
                     dependency-check.sh \
                       --project jenkins-app \
                       --scan . \
-                      --format "HTML,XML" \
+                      -f HTML
+                      -f XML \
                       --out dependency-check-report \
                       --data /tmp/odc-data \
                       --propertyfile /opt/dependency-check/conf/dependency-check.properties || true
