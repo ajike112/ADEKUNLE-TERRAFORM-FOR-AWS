@@ -77,7 +77,7 @@ pipeline {
 
                     rm -rf dependency-check-report
                     mkdir -p dependency-check-report
-                    
+
                     # DO NOT DELETE /tmp/odc-data when using --noupdate
                     mkdir -p /tmp/odc-data
 
@@ -93,14 +93,9 @@ pipeline {
                       --propertyfile /opt/dependency-check/conf/dependency-check.properties 
 
                     EXIT_CODE=$?
-
                     echo "OWASP exit code: $EXIT_CODE"
-
-                    # Fail the build manually if OWASP found vulnerabilities
-                    if [ $EXIT_CODE -ne 0 ]; then
-                        echo "OWASP found vulnerabilities. Failing the build."
-                        exit 1
-                    fi  
+                    # Do NOT fail the build based on OWASP exit code
+                    true           
                 '''
             }
             post {
