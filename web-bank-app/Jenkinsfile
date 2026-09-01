@@ -95,7 +95,7 @@ pipeline {
 
                     echo "OWASP exit code: $EXIT_CODE"
 
-                    # Fail the build manually if OWASP found HIGH/CRITICAL issues
+                    # Fail the build manually if OWASP found vulnerabilities
                     if [ $EXIT_CODE -ne 0 ]; then
                         echo "OWASP found vulnerabilities. Failing the build."
                         exit 1
