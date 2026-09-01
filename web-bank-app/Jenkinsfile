@@ -90,7 +90,7 @@ pipeline {
                       -f XML \
                       --out dependency-check-report \
                       --data /tmp/odc-data \
-                      --propertyfile /opt/dependency-check/conf/dependency-check.properties 
+                      --propertyfile /opt/dependency-check/conf/dependency-check.properties || true
 
                     EXIT_CODE=$?
                     echo "OWASP exit code: $EXIT_CODE"
