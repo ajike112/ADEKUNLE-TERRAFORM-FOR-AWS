@@ -94,7 +94,7 @@ pipeline {
                           --suppression ${WORKSPACE}/web-bank-app/dependency-check-suppression.xml \
                           --nvdApiKey $NVD_API_KEY || true
 
-                        echo "OWASP scan completed (exit code ignored intentionally)"
+                        echo "OWASP scan completed"
                     '''
         }
     }
