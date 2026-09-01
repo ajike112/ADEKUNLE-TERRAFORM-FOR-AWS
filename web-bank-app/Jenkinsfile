@@ -41,7 +41,7 @@ pipeline {
                       --scan . \
                       --format HTML \
                       --out dependency-check-report \
-                      --data /tmp/odc-data
+                      --data /tmp/odc-data \
                       --propertyfile /opt/dependency-check/dependency-check/conf/dependency-check.properties
 
                 """

@@ -52,4 +52,6 @@ unzip dependency-check-8.4.0-release.zip -d dependency-check
 # Correct symlink path
 ln -s /opt/dependency-check/dependency-check/bin/dependency-check.sh /usr/local/bin/dependency-check.sh
 
+echo "nvd.api.key=<YOUR_API_KEY>" > /opt/dependency-check/dependency-check/conf/dependency-check.properties
+
 
