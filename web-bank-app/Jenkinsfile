@@ -21,11 +21,11 @@ pipeline {
 
        stage('Build & Unit Tests') {
            steps {
-               sh """
-                   echo "Running build and unit tests..."
                dir('web-bank-app') {
-                  sh 'mvn clean install'
-                  """
+                   sh """
+                       echo "Running build and unit tests..."
+                       mvn clean install
+                    """
                 }
             }
         }
