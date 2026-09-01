@@ -72,41 +72,40 @@ pipeline {
 
         stage('OWASP Dependency Check') {
             steps {
-                sh '''
-                    echo "Running OWASP Dependency Check with increased heap..."
+                withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
+                    sh '''
+                        echo "Running OWASP Dependency Check with full updates..."
 
-                    rm -rf dependency-check-report
-                    mkdir -p dependency-check-report
+                        rm -rf dependency-check-report
+                        mkdir -p dependency-check-report
 
-                    # DO NOT DELETE /tmp/odc-data when using --noupdate
-                    mkdir -p /tmp/odc-data
+                        mkdir -p /opt/odc-data
 
-                    export JAVA_OPTS="-Xmx2g"
-                    dependency-check.sh \
-                      --project jenkins-app \
-                      --scan . \
-                      -f HTML \
-                      -f XML \
-                      --out dependency-check-report \
-                      --data /tmp/odc-data \
-                      --propertyfile /opt/dependency-check/conf/dependency-check.properties || true
+                        export JAVA_OPTS="-Xmx2g"
 
-                    EXIT_CODE=$?
-                    echo "OWASP exit code: $EXIT_CODE"
-                    # Do NOT fail the build based on OWASP exit code
-                    true           
-                '''
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'dependency-check-report/**',
-                                      fingerprint: true,
-                                      allowEmptyArchive: true
+                        dependency-check.sh \
+                          --project jenkins-app \
+                          --scan . \
+                          -f HTML \
+                          -f XML \
+                          --out dependency-check-report \
+                          --data /opt/odc-data \
+                          --propertyfile /opt/dependency-check/conf/dependency-check.properties \
+                          --nvdApiKey $NVD_API_KEY || true
 
-                     
-                }
-            }
+                        echo "OWASP scan completed (exit code ignored intentionally)"
+                 '''
         }
+    }
+           post {
+               always {
+                   archiveArtifacts artifacts: 'dependency-check-report/**',
+                              fingerprint: true,
+                              allowEmptyArchive: true
+        }
+    }
+}
+
 
         stage('SonarQube SAST') {
             steps {
