@@ -81,7 +81,8 @@ pipeline {
                     # Ensure clean database directory
                     rm -rf /tmp/odc-data
                     mkdir -p /tmp/odc-data
-
+                    
+                    export JAVA_OPTS="-Xmx2g"
                     dependency-check.sh \
                       --project jenkins-app \
                       --scan . \
