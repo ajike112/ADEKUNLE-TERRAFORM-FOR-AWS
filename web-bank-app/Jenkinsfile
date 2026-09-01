@@ -75,6 +75,9 @@ pipeline {
                 sh '''
                     echo "Running OWASP Dependency Check..."
 
+                    rm -rf dependency-check-report
+                    mkdir -p dependency-check-report
+
                     # Ensure clean database directory
                     rm -rf /tmp/odc-data
                     mkdir -p /tmp/odc-data
@@ -95,6 +98,12 @@ pipeline {
                     archiveArtifacts artifacts: 'dependency-check-report/**',
                                       fingerprint: true,
                                       allowEmptyArchive: true
+
+                     recordIssues(
+                         tool: dependencyCheck(pattern: 'dependency-check-report/dependency-check-report.xml'),
+                         failedTotalHigh: 1,
+                         failedTotalCritical: 1
+                     )
                 }
             }
         }
@@ -104,8 +113,9 @@ pipeline {
                 withSonarQubeEnv("${SONARQUBE_ENV}") {
                     sh """
                         echo "Running SonarQube scan..."
-                        mvn sonar:sonar \
+                        sonar-scanner \
                           -Dsonar.projectKey=jenkins-app \
+                          -Dsonar.sources=web-bank-app \
                           -Dsonar.host.url=http://sonarqube-alb-dev-2096794737.us-east-1.elb.amazonaws.com \
                           -Dsonar.login=${SONAR_TOKEN}
                     """
