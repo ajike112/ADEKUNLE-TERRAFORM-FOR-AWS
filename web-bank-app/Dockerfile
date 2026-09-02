@@ -16,15 +16,18 @@ COPY . .
 
 RUN echo "Build stage complete"
 
+
 ##############################
 # Stage 2 — Production image
 ##############################
 FROM node:18-slim AS production
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+# Create non-root user (Debian/Ubuntu syntax)
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser
 
 WORKDIR /usr/src/app
 
+# Copy only necessary files from builder
 COPY --from=builder /usr/src/app/package.json ./
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/server.js ./server.js
