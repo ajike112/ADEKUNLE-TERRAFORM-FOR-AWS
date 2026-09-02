@@ -157,7 +157,7 @@ pipeline {
 
                     sh """
                         echo "Building Docker image..."
-                        docker build -t ${ECR_REPO}:${IMAGE_TAG} .
+                        docker build -t ${ECR_REPO}:${IMAGE_TAG} web-bank-app
                     """
                 }
             }
