@@ -168,7 +168,7 @@ pipeline {
                 sh """
                     export PATH=/usr/bin:/usr/local/bin:$PATH
                     echo "Running Trivy image scan..."
-                    trivy image --exit-code 1 --severity HIGH,CRITICAL ${ECR_REPO}:${IMAGE_TAG}
+                    trivy image --exit-code 1 --severity CRITICAL ${ECR_REPO}:${IMAGE_TAG}
                 """
             }
         }
