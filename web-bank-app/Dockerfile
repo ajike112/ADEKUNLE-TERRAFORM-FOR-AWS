@@ -1,7 +1,7 @@
 ##############################
 # Stage 1 — Build environment
 ##############################
-FROM node:18-alpine AS builder
+FROM node:18-slim AS builder
 
 WORKDIR /usr/src/app
 
@@ -19,7 +19,7 @@ RUN echo "Build stage complete"
 ##############################
 # Stage 2 — Production image
 ##############################
-FROM node:18-alpine AS production
+FROM node:18-slim AS production
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
