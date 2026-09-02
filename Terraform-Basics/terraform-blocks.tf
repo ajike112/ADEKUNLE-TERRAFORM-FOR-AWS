@@ -343,9 +343,9 @@ resource "aws_iam_role" "eks_node_role" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Effect = "Allow",
+      Effect    = "Allow",
       Principal = { Service = "ec2.amazonaws.com" },
-      Action = "sts:AssumeRole"
+      Action    = "sts:AssumeRole"
     }]
   })
 }
@@ -400,7 +400,7 @@ resource "aws_eks_cluster" "eks" {
       aws_subnet.public2.id
     ]
 
-  endpoint_public_access = true
+    endpoint_public_access = true
   }
 
   enabled_cluster_log_types = [
@@ -412,10 +412,10 @@ resource "aws_eks_cluster" "eks" {
   ]
 
   tags = {
-  Name        = var.eks_cluster_name
-  Environment = "dev"
-  Terraform   = "true"
-}
+    Name        = var.eks_cluster_name
+    Environment = "dev"
+    Terraform   = "true"
+  }
 
 
   depends_on = [
@@ -452,7 +452,7 @@ resource "aws_launch_template" "eks_nodes" {
     http_put_response_hop_limit = 2
   }
 
-   block_device_mappings {
+  block_device_mappings {
     device_name = "/dev/xvda"
 
     ebs {
@@ -481,14 +481,14 @@ resource "aws_eks_node_group" "eks_node_group" {
   }
 
   instance_types = [var.eks_node_instance_type]
-  ami_type =  "AL2023_x86_64_STANDARD"
+  ami_type       = "AL2023_x86_64_STANDARD"
 
 
   update_config {
-  max_unavailable = 1
+    max_unavailable = 1
   }
 
-force_update_version = true
+  force_update_version = true
 
   launch_template {
     id      = aws_launch_template.eks_nodes.id
@@ -496,16 +496,16 @@ force_update_version = true
   }
 
   tags = {
-  "kubernetes.io/cluster/${var.eks_cluster_name}" = "owned"
-  "Name" = "${var.eks_cluster_name}-node-group"
-}
+    "kubernetes.io/cluster/${var.eks_cluster_name}" = "owned"
+    "Name"                                          = "${var.eks_cluster_name}-node-group"
+  }
 
- depends_on = [
-  aws_eks_cluster.eks,
-  aws_iam_role_policy_attachment.eks_worker_node_policy_attachment,
-  aws_iam_role_policy_attachment.eks_cni_policy_attachment,
-  aws_iam_role_policy_attachment.eks_registry_policy_attachment
- ]
+  depends_on = [
+    aws_eks_cluster.eks,
+    aws_iam_role_policy_attachment.eks_worker_node_policy_attachment,
+    aws_iam_role_policy_attachment.eks_cni_policy_attachment,
+    aws_iam_role_policy_attachment.eks_registry_policy_attachment
+  ]
 
 }
 
@@ -605,16 +605,16 @@ resource "aws_iam_role_policy_attachment" "alb_controller_policy_attachment" {
 module "k8s_addons" {
   source = "./k8s-modules/k8s-addons"
 
-  region = var.region
+  region           = var.region
   cluster_endpoint = local.cluster_endpoint
   cluster_ca       = local.cluster_ca
   cluster_token    = local.cluster_token
   cluster_name     = local.cluster_name
-  
-  alb_controller_role_arn = aws_iam_role.alb_controller_role.arn
+
+  alb_controller_role_arn              = aws_iam_role.alb_controller_role.arn
   alb_controller_policy_attachment_dep = aws_iam_role_policy_attachment.alb_controller_policy_attachment.id
-  eks_node_group_dep = aws_eks_node_group.eks_node_group.id
-  oidc_provider_dep  = aws_iam_openid_connect_provider.eks.id
+  eks_node_group_dep                   = aws_eks_node_group.eks_node_group.id
+  oidc_provider_dep                    = aws_iam_openid_connect_provider.eks.id
 
   depends_on = [
     aws_eks_cluster.eks,
@@ -638,7 +638,7 @@ resource "kubernetes_storage_class_v1" "gp3" {
 
   metadata {
     name = "gp3"
-  
+
     annotations = {
       "storageclass.kubernetes.io/is-default-class" = "true"
     }
