@@ -156,8 +156,8 @@ pipeline {
                     echo "Running Trivy image scan..."
                     trivy image --exit-code 1 --severity HIGH,CRITICAL ${ECR_REPO}:${IMAGE_TAG}
                 """
-    }
-}
+            }
+        }
 
 
         stage('Docker Build') {
