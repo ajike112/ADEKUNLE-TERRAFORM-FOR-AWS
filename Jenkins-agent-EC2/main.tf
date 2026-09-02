@@ -18,7 +18,7 @@ provider "aws" {
 # Reference Existing Jenkins Master VPC (ECS)
 ############################################
 data "aws_vpc" "ecs_vpc" {
-  id = "vpc-0b006ee0953dbb28e"   # Replace with your ECS VPC ID
+  id = "vpc-0b006ee0953dbb28e" # Replace with your ECS VPC ID
 }
 
 ############################################
@@ -72,15 +72,15 @@ resource "aws_security_group" "jenkins_agent_sg" {
   vpc_id      = data.aws_vpc.ecs_vpc.id
 
   ingress {
-  description = "Allow SSH from laptop"
-  from_port   = 22
-  to_port     = 22
-  protocol    = "tcp"
-  cidr_blocks = [
-     "98.194.47.86/32", 
-     "52.55.37.179/32"
-  ] # my laptop IP and Jenkins Service IP
-}
+    description = "Allow SSH from laptop"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [
+      "98.194.47.86/32",
+      "52.55.37.179/32"
+    ] # my laptop IP and Jenkins Service IP
+  }
 
   ingress {
     description = "Allow Jenkins master to connect via JNLP"
@@ -121,6 +121,7 @@ resource "aws_iam_role" "jenkins_agent_role" {
   })
 }
 
+# Inline policy for Jenkins Agent
 resource "aws_iam_role_policy" "jenkins_agent_policy" {
   name = "jenkins-agent-policy"
   role = aws_iam_role.jenkins_agent_role.id
@@ -142,10 +143,20 @@ resource "aws_iam_role_policy" "jenkins_agent_policy" {
   })
 }
 
+
+# Attach the ECR push policy to the Jenkins Agent role
+resource "aws_iam_role_policy_attachment" "jenkins_agent_ecr_attach" {
+  role       = aws_iam_role.jenkins_agent_role.name
+  policy_arn = "arn:aws:iam::536697262404:policy/jenkins-ecr-push-policy"
+
+}
+
+# Instance profile for EC2
 resource "aws_iam_instance_profile" "jenkins_agent_profile" {
   name = "jenkins-agent-profile"
   role = aws_iam_role.jenkins_agent_role.name
 }
+
 
 ############################################
 # EC2 Instance
