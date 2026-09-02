@@ -149,7 +149,7 @@ pipeline {
             }
         }
 
-        stage('Trivy Scan (Image)') {
+        stage('Trivy Image Scan') {
             steps {
                 sh """
                     export PATH=/usr/bin:/usr/local/bin:$PATH
@@ -173,14 +173,6 @@ pipeline {
             }
         }
 
-        stage('Trivy Scan (Image)') {
-            steps {
-                sh """
-                    echo "Running Trivy image scan..."
-                    trivy image --exit-code 1 --severity HIGH,CRITICAL ${ECR_REPO}:${IMAGE_TAG}
-                """
-            }
-        }
 
         stage('Push to ECR') {
             steps {
