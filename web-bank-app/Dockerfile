@@ -8,10 +8,17 @@ WORKDIR /usr/src/app
 
 # Install dependencies first (better caching)
 COPY package.json package-lock.json* ./
+RUN apt-get update && \
+    apt-get install -y wget && \
+    wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor -o /usr/share/keyrings/trivy.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb stable main" | tee /etc/apt/sources.list.d/trivy.list && \
+    apt-get update && \
+    apt-get install -y trivy
 RUN npm ci
 
+
 # Copy full source
-COPY . .
+COPY . . 
 
 # Build step (if you add React or bundling later)
 # For now, this is a placeholder

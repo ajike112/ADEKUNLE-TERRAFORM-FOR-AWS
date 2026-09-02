@@ -142,11 +142,23 @@ pipeline {
         stage('Trivy Scan (Filesystem)') {
             steps {
                 sh """
+                    export PATH=/usr/bin:/usr/local/bin:$PATH
                     echo "Running Trivy filesystem scan..."
                     trivy fs --exit-code 1 --severity HIGH,CRITICAL .
                 """
             }
         }
+
+        stage('Trivy Scan (Image)') {
+            steps {
+                sh """
+                    export PATH=/usr/bin:/usr/local/bin:$PATH
+                    echo "Running Trivy image scan..."
+                    trivy image --exit-code 1 --severity HIGH,CRITICAL ${ECR_REPO}:${IMAGE_TAG}
+                """
+    }
+}
+
 
         stage('Docker Build') {
             steps {
