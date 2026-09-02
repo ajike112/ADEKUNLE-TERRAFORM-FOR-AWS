@@ -130,11 +130,13 @@ pipeline {
         }
 
         stage('SonarQube Quality Gate') {
-            steps {
-                timeout(time: 10, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
+            options {
+                timeout(time: 10, unit: 'MINUTES') 
             }
+            steps {  
+                waitForQualityGate abortPipeline: true
+            }
+            
         }
 
         stage('Trivy Scan (Filesystem)') {
