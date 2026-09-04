@@ -3,7 +3,7 @@
 ########################
 
 resource "aws_security_group" "sonarqube_alb_sg" {
-  name   = "sonarqube-alb-sg-${var.environment}"
+  name   = "${local.prefix}-alb-sg"
   vpc_id = var.vpc_id
 
   ingress {
@@ -19,10 +19,12 @@ resource "aws_security_group" "sonarqube_alb_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = local.tags
 }
 
 resource "aws_security_group" "sonarqube_app_sg" {
-  name   = "sonarqube-app-sg-${var.environment}"
+  name   = "${local.prefix}-app-sg"
   vpc_id = var.vpc_id
 
   ingress {
@@ -38,10 +40,12 @@ resource "aws_security_group" "sonarqube_app_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = local.tags
 }
 
 resource "aws_security_group" "sonarqube_rds_sg" {
-  name   = "sonarqube-rds-sg-${var.environment}"
+  name   = "${local.prefix}-rds-sg"
   vpc_id = var.vpc_id
 
   ingress {
@@ -57,18 +61,20 @@ resource "aws_security_group" "sonarqube_rds_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = local.tags
 }
 
 resource "aws_security_group" "sonarqube_efs_sg" {
-  name        = "sonarqube-efs-sg-${var.environment}"
+  name        = "${local.prefix}-efs-sg"
   description = "Allow NFS traffic from ECS tasks"
   vpc_id      = var.vpc_id
 
   ingress {
-    description = "Allow NFS from ECS task SG"
-    from_port   = 2049
-    to_port     = 2049
-    protocol    = "tcp"
+    description    = "Allow NFS from ECS task SG"
+    from_port      = 2049
+    to_port        = 2049
+    protocol       = "tcp"
     security_groups = [aws_security_group.sonarqube_app_sg.id]
   }
 
@@ -78,20 +84,23 @@ resource "aws_security_group" "sonarqube_efs_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-}
 
+  tags = local.tags
+}
 
 ########################
 # RDS PostgreSQL
 ########################
 
 resource "aws_db_subnet_group" "sonarqube_db_subnet" {
-  name       = "sonarqube-db-subnet-${var.environment}"
+  name       = "${local.prefix}-db-subnet"
   subnet_ids = var.private_subnets
+
+  tags = local.tags
 }
 
 resource "aws_db_instance" "sonarqube_db" {
-  identifier        = "sonarqube-db-${var.environment}"
+  identifier        = "${local.prefix}-db"
   engine            = "postgres"
   engine_version    = "14.24"
   instance_class    = "db.t3.micro"
@@ -100,22 +109,26 @@ resource "aws_db_instance" "sonarqube_db" {
   username          = "sonar"
   password          = data.aws_secretsmanager_secret_version.db_password.secret_string
 
-
   db_subnet_group_name   = aws_db_subnet_group.sonarqube_db_subnet.name
   vpc_security_group_ids = [aws_security_group.sonarqube_rds_sg.id]
 
   skip_final_snapshot = true
   publicly_accessible = false
-}
 
+
+  tags = local.tags
+}
 
 ########################
 # EFS for SonarQube data
 ########################
 
 resource "aws_efs_file_system" "sonarqube_efs" {
-  creation_token = "sonarqube-efs-${var.environment}"
+  creation_token = "${local.prefix}-efs"
   encrypted      = true
+
+  
+  tags = local.tags
 }
 
 resource "aws_efs_access_point" "sonarqube_ap" {
@@ -134,6 +147,8 @@ resource "aws_efs_access_point" "sonarqube_ap" {
       permissions = "755"
     }
   }
+
+  tags = local.tags
 }
 
 resource "aws_efs_mount_target" "sonarqube_efs_mt" {
@@ -144,21 +159,23 @@ resource "aws_efs_mount_target" "sonarqube_efs_mt" {
   security_groups = [aws_security_group.sonarqube_efs_sg.id]
 }
 
+################################
+# ECS cluster for SonarQube
+################################
 
-################################
-# ECS clsuter for Sonarqqube
-################################
 resource "aws_ecs_cluster" "sonarqube_cluster" {
-  name = "sonarqube-cluster-${var.environment}"
-}
+  name = "${local.prefix}-cluster"
 
+
+  tags = local.tags
+}
 
 ########################
 # IAM roles
 ########################
 
 resource "aws_iam_role" "ecs_execution_role" {
-  name = "sonarqube-ecs-execution-${var.environment}"
+  name = "${local.prefix}-ecs-execution"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -170,6 +187,8 @@ resource "aws_iam_role" "ecs_execution_role" {
       Action = "sts:AssumeRole"
     }]
   })
+
+  tags = local.tags
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_execution_role_policy" {
@@ -178,7 +197,7 @@ resource "aws_iam_role_policy_attachment" "ecs_execution_role_policy" {
 }
 
 resource "aws_iam_role" "ecs_task_role" {
-  name = "sonarqube-ecs-task-${var.environment}"
+  name = "${local.prefix}-ecs-task"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -190,10 +209,12 @@ resource "aws_iam_role" "ecs_task_role" {
       Action = "sts:AssumeRole"
     }]
   })
+
+  tags = local.tags
 }
 
 resource "aws_iam_role_policy" "efs_access" {
-  name = "efs-access-${var.environment}"
+  name = "${local.prefix}-efs-access"
   role = aws_iam_role.ecs_task_role.id
 
   policy = jsonencode({
@@ -212,13 +233,19 @@ resource "aws_iam_role_policy" "efs_access" {
   })
 }
 
-
 ########################
 # ECS Task Definition
 ########################
 
+resource "aws_cloudwatch_log_group" "sonarqube" {
+  name              = "/ecs/${local.prefix}"
+  retention_in_days = 30
+
+  tags = local.tags
+}
+
 resource "aws_ecs_task_definition" "sonarqube" {
-  family                   = "sonarqube-dev"
+  family                   = "${local.prefix}-task"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = "2048"
@@ -251,7 +278,7 @@ resource "aws_ecs_task_definition" "sonarqube" {
         },
         {
           name  = "SONAR_JDBC_PASSWORD"
-          value =  data.aws_secretsmanager_secret_version.db_password.secret_string
+          value = data.aws_secretsmanager_secret_version.db_password.secret_string
         }
       ]
 
@@ -270,8 +297,8 @@ resource "aws_ecs_task_definition" "sonarqube" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = "/ecs/sonarqube"
-          awslogs-region        = "us-east-1"
+          awslogs-group         = aws_cloudwatch_log_group.sonarqube.name
+          awslogs-region        = data.aws_region.current.name
           awslogs-stream-prefix = "ecs"
         }
       }
@@ -282,10 +309,9 @@ resource "aws_ecs_task_definition" "sonarqube" {
     name = "sonarqube-data"
 
     efs_volume_configuration {
-      file_system_id     = aws_efs_file_system.sonarqube_efs.id
-      transit_encryption = "ENABLED"
+      file_system_id          = aws_efs_file_system.sonarqube_efs.id
+      transit_encryption      = "ENABLED"
       transit_encryption_port = 2999
-
 
       authorization_config {
         access_point_id = aws_efs_access_point.sonarqube_ap.id
@@ -293,31 +319,30 @@ resource "aws_ecs_task_definition" "sonarqube" {
       }
     }
   }
+
+  tags = local.tags
 }
-
-resource "aws_cloudwatch_log_group" "sonarqube" {
-  name              = "/ecs/sonarqube"
-  retention_in_days = 30
-}
-
-
 
 ########################
 # ALB + Target Group + Listener
 ########################
 
 resource "aws_lb" "sonarqube_alb" {
-  name               = "sonarqube-alb-${var.environment}"
+  name               = "${local.prefix}-alb"
   load_balancer_type = "application"
   subnets            = var.public_subnets
   security_groups    = [aws_security_group.sonarqube_alb_sg.id]
+
+
+
+  tags = local.tags
 }
 
 resource "aws_lb_target_group" "sonarqube_tg" {
-  name     = "sonarqube-tg-${var.environment}"
-  port     = 9000
-  protocol = "HTTP"
-  vpc_id   = var.vpc_id
+  name        = "${local.prefix}-tg"
+  port        = 9000
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
   target_type = "ip"
 
   health_check {
@@ -328,6 +353,8 @@ resource "aws_lb_target_group" "sonarqube_tg" {
     unhealthy_threshold = 2
     healthy_threshold   = 2
   }
+
+  tags = local.tags
 }
 
 resource "aws_lb_listener" "sonarqube_listener" {
@@ -342,11 +369,11 @@ resource "aws_lb_listener" "sonarqube_listener" {
 }
 
 ########################
-# ECS Service
+# ECS Service + Autoscaling
 ########################
 
 resource "aws_ecs_service" "sonarqube" {
-  name            = "sonarqube-${var.environment}"
+  name            = "${local.prefix}-service"
   cluster         = aws_ecs_cluster.sonarqube_cluster.id
   task_definition = aws_ecs_task_definition.sonarqube.arn
   desired_count   = 1
@@ -367,5 +394,33 @@ resource "aws_ecs_service" "sonarqube" {
   depends_on = [
     aws_lb_listener.sonarqube_listener
   ]
+
+  tags = local.tags
 }
-    
+
+resource "aws_appautoscaling_target" "sonarqube" {
+  max_capacity       = 3
+  min_capacity       = 1
+  resource_id        = "service/${aws_ecs_cluster.sonarqube_cluster.name}/${aws_ecs_service.sonarqube.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
+
+resource "aws_appautoscaling_policy" "cpu_scale_up" {
+  name               = "${local.prefix}-cpu-scale-up"
+  policy_type        = "StepScaling"
+  resource_id        = aws_appautoscaling_target.sonarqube.resource_id
+  scalable_dimension = aws_appautoscaling_target.sonarqube.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.sonarqube.service_namespace
+
+  step_scaling_policy_configuration {
+    adjustment_type         = "PercentChangeInCapacity"
+    cooldown                = 60
+    metric_aggregation_type = "Average"
+
+    step_adjustment {
+      metric_interval_lower_bound = 0
+      scaling_adjustment          = 50
+    }
+  }
+}

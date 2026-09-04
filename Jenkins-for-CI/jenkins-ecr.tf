@@ -27,7 +27,7 @@ resource "aws_ecr_repository" "jenkins_app_repo" {
   }
 
   tags = {
-    Name = "jenkins-app-repo"
+    Name        = "jenkins-app-repo"
     Environment = "ci"
   }
 }

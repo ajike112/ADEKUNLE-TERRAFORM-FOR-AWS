@@ -1,13 +1,13 @@
-vpc_id = "vpc-0b006ee0953dbb28e"
+vpc_id = "vpc-02c37a159008c6f80"
 
 private_subnets = [
-  "subnet-0cfd4f78c648a5739",
-  "subnet-01e7a9716277bb857"
+  "subnet-0bfe282b39263fdc1",
+  "subnet-03d8d7454176f15b1"
 ]
 
 public_subnets = [
-  "subnet-09e0b1f0bfbd70dca",
-  "subnet-0bfddbcf36dafe821"
+  "subnet-067afa72f3ec1a4b4",
+  "subnet-0db48ff22c23537fe"
 ]
 
 ecs_cluster_name = "sonarqube-ecs-cluster"

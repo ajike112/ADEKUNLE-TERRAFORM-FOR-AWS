@@ -50,9 +50,9 @@ resource "aws_subnet" "jenkins_public_2" {
 }
 
 resource "aws_subnet" "jenkins_private_1" {
-  vpc_id            = aws_vpc.jenkins_vpc.id
-  cidr_block        = "10.20.20.0/24"
-  availability_zone = "us-east-1a"
+  vpc_id                  = aws_vpc.jenkins_vpc.id
+  cidr_block              = "10.20.20.0/24"
+  availability_zone       = "us-east-1a"
   map_public_ip_on_launch = false
 
   tags = {
@@ -61,9 +61,9 @@ resource "aws_subnet" "jenkins_private_1" {
 }
 
 resource "aws_subnet" "jenkins_private_2" {
-  vpc_id            = aws_vpc.jenkins_vpc.id
-  cidr_block        = "10.20.21.0/24"
-  availability_zone = "us-east-1b"
+  vpc_id                  = aws_vpc.jenkins_vpc.id
+  cidr_block              = "10.20.21.0/24"
+  availability_zone       = "us-east-1b"
   map_public_ip_on_launch = false
 
   tags = {
@@ -244,21 +244,21 @@ resource "aws_security_group" "jenkins_task_sg" {
 # ─────────────────────────────────────────────────────────────
 
 module "jenkins_fargate" {
-  source = "./modules/jenkins-fargate"
+  source     = "./modules/jenkins-fargate"
   aws_region = var.aws_region
-  vpc_id = aws_vpc.jenkins_vpc.id
+  vpc_id     = aws_vpc.jenkins_vpc.id
 
- private_subnet_ids = {
-  private1 = aws_subnet.jenkins_private_1.id
-  private2 = aws_subnet.jenkins_private_2.id
-}
+  private_subnet_ids = {
+    private1 = aws_subnet.jenkins_private_1.id
+    private2 = aws_subnet.jenkins_private_2.id
+  }
 
-public_subnet_ids = [
-  aws_subnet.jenkins_public_1.id,
-  aws_subnet.jenkins_public_2.id
-]
+  public_subnet_ids = [
+    aws_subnet.jenkins_public_1.id,
+    aws_subnet.jenkins_public_2.id
+  ]
 
-  
+
   alb_sg_id  = aws_security_group.jenkins_alb_sg.id
   task_sg_id = aws_security_group.jenkins_task_sg.id
   efs_sg_id  = aws_security_group.jenkins_efs_sg.id
@@ -266,6 +266,9 @@ public_subnet_ids = [
 
   jenkins_fargate_cpu    = var.jenkins_fargate_cpu
   jenkins_fargate_memory = var.jenkins_fargate_memory
-  jenkins_admin_user     =var.jenkins_admin_user
+  jenkins_admin_user     = var.jenkins_admin_user
   jenkins_admin_pass     = var.jenkins_admin_pass
+
+
+  depends_on = [aws_security_group.jenkins_alb_sg]
 }

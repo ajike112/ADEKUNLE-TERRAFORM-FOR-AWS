@@ -12,6 +12,10 @@ resource "aws_efs_file_system" "jenkins_efs" {
   creation_token = "jenkins-efs"
   encrypted      = true
 
+ lifecycle {
+    prevent_destroy = true
+  }
+
   tags = {
     Name = "jenkins-efs"
   }
@@ -39,14 +43,14 @@ resource "aws_lb" "jenkins_alb" {
   subnets            = var.public_subnet_ids
 
   lifecycle {
-  create_before_destroy = true
-}
-
+    create_before_destroy = true
+  }
 
   tags = {
     Name = "jenkins-alb"
   }
 }
+
 
 resource "aws_lb_target_group" "jenkins_tg" {
   name     = "jenkins-tg"
