@@ -89,7 +89,7 @@ pipeline {
         stage('SonarQube SAST') {
             steps {
                 dir('web-bank-app') {
-                   withSonarQubeEnv("${SONARQUBE_ENV}") {
+                   withSonarQubeEnv('SonarQube') {
                        sh """
                            echo "Running SonarQube scan..."
                            export PATH=/opt/sonar-scanner/bin:$PATH
