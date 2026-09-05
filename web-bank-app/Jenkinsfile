@@ -100,17 +100,7 @@ pipeline {
             }
         }
 
-        
     
-           post {
-               always {
-                   archiveArtifacts artifacts: 'dependency-check-report/**', 
-                   fingerprint: true,
-                   allowEmptyArchive: true
-                              
-                }
-            }
-
 
 
         stage('SonarQube SAST') {
@@ -192,6 +182,16 @@ pipeline {
     }
 
     post {
+        always {
+            archiveArtifacts artifacts: 'dependency-check-report/**', 
+                   fingerprint: true,
+                   allowEmptyArchive: true
+                              
+                }
+            }
+
+
+    post {
         success {
             echo "CI pipeline completed successfully. Image tag: ${env.IMAGE_TAG}"
 
@@ -234,6 +234,6 @@ ${env.BUILD_URL}artifact/dependency-check-report/dependency-check-report.html
 Regards,
 Jenkins CI/CD
 """
-        }
+        } 
     }
 }
