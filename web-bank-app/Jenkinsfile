@@ -80,6 +80,7 @@ pipeline {
                           --data ${WORKSPACE}/odc-data \
                           --suppression ${WORKSPACE}/web-bank-app/dependency-check-suppression.xml \
                           --nvdApiKey $NVD_API_KEY \
+                          --disableOssIndex
 
                         echo "OWASP scan completed"
                     '''
