@@ -93,15 +93,18 @@ pipeline {
                         sh '''
                             echo "Running SonarQube scan..."
                             export PATH=/opt/sonar-scanner/bin:$PATH
+
                             sonar-scanner \
-                             -Dsonar.projectKey=web-bank-app \
-                             -Dsonar.sources=. \
-                             -Dsonar.host.url=http://sonarqube-alb-dev-1370244034.us-east-1.elb.amazonaws.com \
-                             -Dsonar.login=${SONAR_TOKEN}
+                              -Dsonar.projectKey=web-bank-app \
+                              -Dsonar.sources=. \
+                              -Dsonar.host.url=http://sonarqube-alb-dev-1370244034.us-east-1.elb.amazonaws.com \
+                              -Dsonar.login=$SONAR_TOKEN
                         '''
-                }   }
-            }
-        }
+                    }                        
+                }      
+            }           
+        }               
+
 
         stage('SonarQube Quality Gate') {
             options {
