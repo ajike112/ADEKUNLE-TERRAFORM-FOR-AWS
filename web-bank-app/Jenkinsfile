@@ -21,7 +21,6 @@ pipeline {
         stage('Conditional Cleanup (Disk < 5GB)') {
             steps {
                 script {
-                    // Get free disk space in MB
                     def freeMB = sh(
                         script: "df -m / | awk 'NR==2 {print \$4}'",
                         returnStdout: true
@@ -29,26 +28,15 @@ pipeline {
 
                     echo "Free disk space: ${freeMB} MB"
 
-                    // Run cleanup only if free space < 5000 MB (5GB)
                     if (freeMB < 5000) {
                         echo "Disk space below 5GB — running cleanup..."
 
                         sh """
-                            # Remove dangling Docker images
                             docker image prune -f
-
-                            # Remove unused Docker containers
                             docker container prune -f
-
-                            # Remove unused Docker volumes
                             docker volume prune -f
-
-                            # Remove unused Docker build cache
                             docker builder prune -af
-
-                            # Clean Jenkins workspace temp directories
                             rm -rf /home/ubuntu/jenkins/workspace/*@tmp || true
-
                             echo "Cleanup complete."
                         """
                     } else {
@@ -78,13 +66,11 @@ pipeline {
 
                         rm -rf dependency-check-report
                         mkdir -p dependency-check-report
-
-                        # Use workspace-owned directory instead of /opt
                         mkdir -p ${WORKSPACE}/odc-data
 
                         export JAVA_OPTS="-Xmx2g"
                         export NVD_API_KEY=$NVD_API_KEY
- 
+
                         dependency-check.sh \
                           --project jenkins-app \
                           --scan web-bank-app \
@@ -99,9 +85,6 @@ pipeline {
                 }
             }
         }
-
-    
-
 
         stage('SonarQube SAST') {
             steps {
@@ -121,24 +104,21 @@ pipeline {
 
         stage('SonarQube Quality Gate') {
             options {
-                timeout(time: 10, unit: 'MINUTES') 
+                timeout(time: 10, unit: 'MINUTES')
             }
-            steps {  
+            steps {
                 waitForQualityGate abortPipeline: true
             }
-            
         }
 
         stage('Trivy Scan (Filesystem)') {
             steps {
                 sh """
-                    export PATH=/usr/bin:/usr/local/bin:$PATH
                     echo "Running Trivy filesystem scan..."
                     trivy fs --exit-code 1 --severity HIGH,CRITICAL .
                 """
             }
         }
-
 
         stage('Docker Build') {
             steps {
@@ -156,7 +136,6 @@ pipeline {
         stage('Trivy Image Scan') {
             steps {
                 sh """
-                    export PATH=/usr/bin:/usr/local/bin:$PATH
                     echo "Running Trivy image scan..."
                     trivy image --exit-code 0 --severity CRITICAL --ignore-unfixed --scanners vuln ${ECR_REPO}:${IMAGE_TAG}
                 """
@@ -178,20 +157,17 @@ pipeline {
                 """
             }
         }
-    
-    }
+
+    }  // END stages
 
     post {
+
         always {
-            archiveArtifacts artifacts: 'dependency-check-report/**', 
-                   fingerprint: true,
-                   allowEmptyArchive: true
-                              
-                }
-            }
+            archiveArtifacts artifacts: 'dependency-check-report/**',
+                             fingerprint: true,
+                             allowEmptyArchive: true
+        }
 
-
-    post {
         success {
             echo "CI pipeline completed successfully. Image tag: ${env.IMAGE_TAG}"
 
@@ -212,6 +188,7 @@ Regards,
 Jenkins CI/CD
 """
         }
+
         failure {
             echo "CI pipeline failed. Check OWASP, SonarQube, or Trivy results."
 
@@ -234,6 +211,6 @@ ${env.BUILD_URL}artifact/dependency-check-report/dependency-check-report.html
 Regards,
 Jenkins CI/CD
 """
-        } 
+        }
     }
 }
