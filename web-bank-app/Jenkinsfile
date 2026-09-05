@@ -101,21 +101,10 @@ pipeline {
                               -Dsonar.host.url=http://sonarqube-alb-dev-1370244034.us-east-1.elb.amazonaws.com \
                               -Dsonar.login=$SONAR_TOKEN
                         '''
-                    }                        
-                }      
-            }           
-        }               
-
-        post {
-
-            always {
-                archiveArtifacts artifacts: 'dependency-check-report/**',
-                             fingerprint: true,
-                             allowEmptyArchive: true
-            }   
+                    }
+                }
+            }
         }
-
-
 
         stage('SonarQube Quality Gate') {
             options {
@@ -173,9 +162,16 @@ pipeline {
             }
         }
 
-    }  // END stages
+    } // END stages
 
-    
+    post {
+
+        always {
+            archiveArtifacts artifacts: 'dependency-check-report/**',
+                             fingerprint: true,
+                             allowEmptyArchive: true
+        }
+
         success {
             echo "CI pipeline completed successfully. Image tag: ${env.IMAGE_TAG}"
 
@@ -219,6 +215,6 @@ ${env.BUILD_URL}artifact/dependency-check-report/dependency-check-report.html
 Regards,
 Jenkins CI/CD
 """
+        }
     }
 }
-
