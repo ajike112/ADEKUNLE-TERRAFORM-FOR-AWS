@@ -96,7 +96,7 @@ pipeline {
                            sonar-scanner \
                              -Dsonar.projectKey=web-bank-app \
                              -Dsonar.sources=. \
-                             -Dsonar.host.url=http://sonarqube-alb-dev-2096794737.us-east-1.elb.amazonaws.com \
+                             -Dsonar.host.url=http://sonarqube-alb-dev-1370244034.us-east-1.elb.amazonaws.com \
                              -Dsonar.login=${SONAR_TOKEN}
                         """
                 }   }
