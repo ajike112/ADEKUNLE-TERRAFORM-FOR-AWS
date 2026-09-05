@@ -71,35 +71,35 @@ pipeline {
         }
 
          stage('OWASP Dependency Check') {
-            steps {
-                withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
-                    sh '''
-                        echo "Running OWASP Dependency Check with full updates..."
+             steps {
+                 withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
+                     sh '''
+                         echo "Running OWASP Dependency Check with full updates..."
 
-                        rm -rf dependency-check-report
-                        mkdir -p dependency-check-report
+                         rm -rf dependency-check-report
+                         mkdir -p dependency-check-report
 
-                        # Use workspace-owned directory instead of /opt
-                        mkdir -p ${WORKSPACE}/odc-data
+                         # Use workspace-owned directory instead of /opt
+                         mkdir -p ${WORKSPACE}/odc-data
 
-                        export JAVA_OPTS="-Xmx2g"
-
-                        (
-                        export NVD_API_KEY=$NVD_API_KEY 
+                         export JAVA_OPTS="-Xmx2g"
+                         export NVD_API_KEY=$NVD_API_KEY
+ 
                         dependency-check.sh \
                           --project jenkins-app \
                           --scan web-bank-app \
                           -f HTML \
                           -f XML \
                           --out dependency-check-report \
-                          --data /opt/odc-data \
-                          --propertyfile /opt/dependency-check/conf/dependency-check.properties \
-                          --suppression ${WORKSPACE}/web-bank-app/dependency-check-suppression.xml \
-                          
-                        ) || true
+                          --data ${WORKSPACE}/odc-data \
+                          --suppression ${WORKSPACE}/web-bank-app/dependency-check-suppression.xml
 
                         echo "OWASP scan completed"
                     '''
+                }
+            }
+        }
+
         }
     }
            post {
@@ -110,7 +110,7 @@ pipeline {
                               
         }
     }
-}
+
 
 
         stage('SonarQube SAST') {
