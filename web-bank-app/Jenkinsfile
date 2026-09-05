@@ -31,14 +31,14 @@ pipeline {
                     if (freeMB < 5000) {
                         echo "Disk space below 5GB — running cleanup..."
 
-                        sh """
+                        sh '''
                             docker image prune -f
                             docker container prune -f
                             docker volume prune -f
                             docker builder prune -af
                             rm -rf /home/ubuntu/jenkins/workspace/*@tmp || true
                             echo "Cleanup complete."
-                        """
+                        '''
                     } else {
                         echo "Disk space is healthy — skipping cleanup."
                     }
@@ -49,11 +49,11 @@ pipeline {
         stage('Build & Unit Tests') {
             steps {
                 dir('web-bank-app') {
-                    sh """
+                    sh '''
                         echo "Installing dependencies and running tests..."
                         npm install
                         npm test
-                    """
+                    '''
                 }
             }
         }
@@ -90,7 +90,7 @@ pipeline {
             steps {
                 dir('web-bank-app') {
                     withSonarQubeEnv('SonarQube') {
-                        sh """
+                        sh '''
                             echo "Running SonarQube scan..."
                             export PATH=/opt/sonar-scanner/bin:$PATH
                             sonar-scanner \
@@ -98,7 +98,7 @@ pipeline {
                              -Dsonar.sources=. \
                              -Dsonar.host.url=http://sonarqube-alb-dev-1370244034.us-east-1.elb.amazonaws.com \
                              -Dsonar.login=${SONAR_TOKEN}
-                        """
+                        '''
                 }   }
             }
         }
@@ -114,10 +114,10 @@ pipeline {
 
         stage('Trivy Scan (Filesystem)') {
             steps {
-                sh """
+                sh '''
                     echo "Running Trivy filesystem scan..."
                     trivy fs --exit-code 1 --severity HIGH,CRITICAL .
-                """
+                '''
             }
         }
 
@@ -126,26 +126,26 @@ pipeline {
                 script {
                     env.IMAGE_TAG = "${env.BUILD_NUMBER}"
 
-                    sh """
+                    sh '''
                         echo "Building Docker image..."
                         docker build -t ${ECR_REPO}:${IMAGE_TAG} web-bank-app
-                    """
+                    '''
                 }
             }
         }
 
         stage('Trivy Image Scan') {
             steps {
-                sh """
+                sh '''
                     echo "Running Trivy image scan..."
                     trivy image --exit-code 0 --severity CRITICAL --ignore-unfixed --scanners vuln ${ECR_REPO}:${IMAGE_TAG}
-                """
+                '''
             }
         }
 
         stage('Push to ECR') {
             steps {
-                sh """
+                sh '''
                     echo "Logging into ECR..."
                     aws ecr get-login-password --region ${AWS_REGION} | \
                       docker login --username AWS --password-stdin ${ECR_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
@@ -155,7 +155,7 @@ pipeline {
 
                     echo "Pushing image to ECR..."
                     docker push ${ECR_URL}:${IMAGE_TAG}
-                """
+                '''
             }
         }
 
