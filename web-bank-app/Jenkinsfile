@@ -85,7 +85,7 @@ pipeline {
                         export JAVA_OPTS="-Xmx2g"
 
                         (
-
+                        export NVD_API_KEY=$NVD_API_KEY 
                         dependency-check.sh \
                           --project jenkins-app \
                           --scan web-bank-app \
@@ -95,7 +95,6 @@ pipeline {
                           --data /opt/odc-data \
                           --propertyfile /opt/dependency-check/conf/dependency-check.properties \
                           --suppression ${WORKSPACE}/web-bank-app/dependency-check-suppression.xml \
-                          --nvdApiKey $NVD_API_KEY 
                           
                         ) || true
 
