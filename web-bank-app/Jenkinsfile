@@ -219,6 +219,6 @@ ${env.BUILD_URL}artifact/dependency-check-report/dependency-check-report.html
 Regards,
 Jenkins CI/CD
 """
-        }
     }
 }
+
