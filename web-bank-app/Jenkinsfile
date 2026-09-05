@@ -70,7 +70,7 @@ pipeline {
             }
         }
 
-        stage('OWASP Dependency Check') {
+         stage('OWASP Dependency Check') {
             steps {
                 withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
                     sh '''
@@ -79,7 +79,8 @@ pipeline {
                         rm -rf dependency-check-report
                         mkdir -p dependency-check-report
 
-                        mkdir -p /opt/odc-data
+                        # Use workspace-owned directory instead of /opt
+                        mkdir -p ${WORKSPACE}/odc-data
 
                         export JAVA_OPTS="-Xmx2g"
 
