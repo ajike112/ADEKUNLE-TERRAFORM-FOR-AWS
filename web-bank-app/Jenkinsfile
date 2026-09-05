@@ -77,7 +77,7 @@ pipeline {
                           -f XML \
                           --out dependency-check-report \
                           --data ${WORKSPACE}/odc-data \
-                          --suppression ${WORKSPACE}/web-bank-app/dependency-check-suppression.xml
+                          --suppression ${WORKSPACE}/web-bank-app/dependency-check-suppression.xml \
                           --nvdApiKey $NVD_API_KEY
 
                         echo "OWASP scan completed"
