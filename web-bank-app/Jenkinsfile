@@ -69,7 +69,6 @@ pipeline {
                         mkdir -p ${WORKSPACE}/odc-data
 
                         export JAVA_OPTS="-Xmx2g"
-                        export NVD_API_KEY=$NVD_API_KEY
 
                         dependency-check.sh \
                           --project jenkins-app \
@@ -79,6 +78,7 @@ pipeline {
                           --out dependency-check-report \
                           --data ${WORKSPACE}/odc-data \
                           --suppression ${WORKSPACE}/web-bank-app/dependency-check-suppression.xml
+                          --nvdApiKey $NVD_API_KEY
 
                         echo "OWASP scan completed"
                     '''
