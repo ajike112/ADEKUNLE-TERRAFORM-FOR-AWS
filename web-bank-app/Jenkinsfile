@@ -70,7 +70,7 @@ pipeline {
 
                         export JAVA_OPTS="-Xmx2g"
 
-                        dependency-check.sh \
+                        /opt/dependency-check/bin/dependency-check.sh \
                           --project jenkins-app \
                           --scan web-bank-app \
                           --exclude node_modules \
