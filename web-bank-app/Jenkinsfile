@@ -73,6 +73,7 @@ pipeline {
                         dependency-check.sh \
                           --project jenkins-app \
                           --scan web-bank-app \
+                          --exclude node_modules \
                           -f HTML \
                           -f XML \
                           --out dependency-check-report \
