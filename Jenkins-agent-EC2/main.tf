@@ -145,7 +145,10 @@ resource "aws_iam_role_policy" "jenkins_agent_policy" {
           "ecr:*",
           "s3:*",
           "logs:*",
-          "cloudwatch:*"
+          "cloudwatch:*",
+          "elasticloadbalancing:DescribeLoadBalancers",
+          "elasticloadbalancing:DescribeTargetGroups",
+          "elasticloadbalancing:DescribeListeners"
         ]
         Resource = "*"
       }
