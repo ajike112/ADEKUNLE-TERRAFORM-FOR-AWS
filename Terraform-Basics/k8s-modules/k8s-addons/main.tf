@@ -1,3 +1,26 @@
+terraform {
+  required_providers {
+    kubectl = {
+      source  = "gavinbunney/kubectl"
+      version = "1.14.0"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.0"
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.0"
+    }
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
+}
+
+
+
 
 ###################
 ## KUBERNETES NAMESPACE FOR MONITORING
@@ -224,6 +247,39 @@ resource "helm_release" "jaeger" {
   depends_on = [
      kubernetes_namespace.tracing,
     helm_release.alb_ingress
+  ]
+}
+
+
+###################
+## SECRETS STORE CSI DRIVER
+###################
+resource "helm_release" "secrets_store_csi_driver" {
+  name       = "secrets-store-csi-driver"
+  namespace  = "kube-system"
+  repository = "https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts"
+  chart      = "secrets-store-csi-driver"
+  version    = "1.4.0"
+
+  depends_on = [
+    helm_release.alb_ingress
+  ]
+}
+
+
+###################
+## AWS PROVIDER FOR CSI DRIVER
+###################
+resource "kubectl_manifest" "aws_secrets_provider" {
+  yaml_body = <<-EOF
+${file("${path.module}/provider-aws-installer.yaml")}
+EOF
+
+  apply_only = true
+  force_new  = true
+
+  depends_on = [
+    helm_release.secrets_store_csi_driver
   ]
 }
 

@@ -5,10 +5,14 @@
 terraform {
   required_version = ">= 1.1.0" ## This sets the condition to ignore any terraform version below 1.1.0
 
-  required_providers {
+   required_providers {
+    kubectl = {
+      source  = "gavinbunney/kubectl"
+      version = "1.14.0"
+    }
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 6.0" ## This is the current AWS API version
+      version = "~> 6.0" # This is the current AWS API version
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
@@ -34,7 +38,6 @@ provider "helm" {
     token                  = local.cluster_token
   }
 }
-
 
 
 
@@ -605,6 +608,13 @@ resource "aws_iam_role_policy_attachment" "alb_controller_policy_attachment" {
 
 module "k8s_addons" {
   source = "./k8s-modules/k8s-addons"
+
+
+  providers = {
+    kubectl = kubectl
+    kubernetes = kubernetes
+    helm = helm
+  }
 
   region           = var.region
   cluster_endpoint = local.cluster_endpoint
