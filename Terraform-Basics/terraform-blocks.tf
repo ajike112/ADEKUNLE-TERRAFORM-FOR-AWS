@@ -38,6 +38,7 @@ provider "helm" {
 
 
 
+
 ## PROVIDER BLOCK. This block is mainly for authentication and authorization. We are basically allowing terraform to access our AWS
 ## This is the best practice for provider block
 provider "aws" {

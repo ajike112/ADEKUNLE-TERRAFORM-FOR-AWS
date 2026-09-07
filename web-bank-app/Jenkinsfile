@@ -163,7 +163,37 @@ pipeline {
             }
         }
 
-    } // END stages
+    } 
+
+        stage('Update Helm Values & Trigger CD') {
+            steps {
+                script {
+                    echo "Updating Helm values file with new image tag..."
+
+                    // Path to your dev or prod overlay
+                    def valuesFile = "web-bank-app/helm/overlays/dev/values-dev.yaml"
+
+                    // Replace the tag line with the new BUILD_NUMBER
+                    sh """
+                        sed -i 's/tag:.*/tag: "dev-${BUILD_NUMBER}"/' ${valuesFile}
+                    """
+
+                    echo "Committing updated Helm values file..."
+
+                    sh """
+                        git config user.email "jenkins@ci"
+                        git config user.name "Jenkins CI"
+
+                        git add ${valuesFile}
+                        git commit -m "CI/CD: Update image tag to dev-${BUILD_NUMBER}"
+                        git push origin master
+                    """
+
+                    echo "GitOps CD triggered — ArgoCD will sync automatically."
+                }
+            }
+        }
+
 
     post {
 
