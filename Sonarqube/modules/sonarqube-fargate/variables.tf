@@ -13,11 +13,9 @@ variable "public_subnets" {
   type        = list(string)
 }
 
-
 variable "environment" {
   description = "Environment name"
   type        = string
-  default     = "dev"
 }
 
 variable "db_password" {
@@ -25,4 +23,3 @@ variable "db_password" {
   type        = string
   sensitive   = true
 }
-

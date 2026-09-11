@@ -5,7 +5,7 @@ echo "Add files and do local commit"
 git add .
 echo "checking status"
 git status
-git commit -am "updated ECS for Jenkins and Sonarqube to autoscale"
+git commit -am "Restructing terraform resource folders"
 
 echo "Pushing to Github Repository"
 git push -u origin master

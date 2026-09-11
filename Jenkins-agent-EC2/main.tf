@@ -18,7 +18,7 @@ provider "aws" {
 # Reference Existing Jenkins Master VPC (ECS)
 ############################################
 data "aws_vpc" "ecs_vpc" {
-  id = "vpc-02c37a159008c6f80"
+  id = var.vpc_id
 }
 
 ############################################
@@ -26,8 +26,8 @@ data "aws_vpc" "ecs_vpc" {
 ############################################
 resource "aws_subnet" "jenkins_agent_subnet" {
   vpc_id                  = data.aws_vpc.ecs_vpc.id
-  cidr_block              = "10.20.60.0/24"
-  availability_zone       = "us-east-1a"
+  cidr_block              = var.subnet_cidr
+  availability_zone       = var.availability_zone
   map_public_ip_on_launch = false   # IMPORTANT: we will attach an EIP manually
 
   tags = {
@@ -75,14 +75,19 @@ resource "aws_security_group" "jenkins_agent_sg" {
   vpc_id      = data.aws_vpc.ecs_vpc.id
 
   ingress {
-    description = "Allow SSH from laptop and Jenkins master"
+    description = "Allow SSH from laptop"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [
-      "98.194.47.86/32",      # your laptop
-      "54.160.158.144/32"     # Jenkins master public IP
-    ]
+    cidr_blocks = [var.ssh_cidr]
+  }
+
+  ingress {
+    description = "Allow SSH from Jenkins master inside VPC"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
   }
 
   ingress {
@@ -90,16 +95,8 @@ resource "aws_security_group" "jenkins_agent_sg" {
     from_port   = 50000
     to_port     = 50000
     protocol    = "tcp"
-    cidr_blocks = ["10.20.0.0/16"]
+    cidr_blocks = var.jenkins_master_cidr
   }
-
-ingress {
-  description = "Allow SSH from Jenkins master inside VPC"
-  from_port   = 22
-  to_port     = 22
-  protocol    = "tcp"
-  cidr_blocks = ["10.20.0.0/16"]
-}
 
   egress {
     description = "Allow all outbound"
@@ -158,7 +155,7 @@ resource "aws_iam_role_policy" "jenkins_agent_policy" {
 
 resource "aws_iam_role_policy_attachment" "jenkins_agent_ecr_attach" {
   role       = aws_iam_role.jenkins_agent_role.name
-  policy_arn = "arn:aws:iam::536697262404:policy/jenkins-ecr-push-policy"
+  policy_arn = var.jenkins_ecr_policy_arn
 }
 
 resource "aws_iam_instance_profile" "jenkins_agent_profile" {
@@ -197,14 +194,8 @@ resource "aws_eip" "jenkins_agent_eip" {
 }
 
 ############################################
-# Associate EIP with Jenkins Agent EC2
+# Primary ENI for Jenkins Agent
 ############################################
-resource "aws_eip_association" "jenkins_agent_eip_assoc" {
-  allocation_id = aws_eip.jenkins_agent_eip.id
-  network_interface_id = data.aws_network_interface.jenkins_agent_primary_eni.id
-}
-
-
 data "aws_network_interface" "jenkins_agent_primary_eni" {
   filter {
     name   = "attachment.instance-id"
@@ -215,4 +206,12 @@ data "aws_network_interface" "jenkins_agent_primary_eni" {
     name   = "attachment.device-index"
     values = ["0"]
   }
+}
+
+############################################
+# Associate EIP with Jenkins Agent EC2
+############################################
+resource "aws_eip_association" "jenkins_agent_eip_assoc" {
+  allocation_id       = aws_eip.jenkins_agent_eip.id
+  network_interface_id = data.aws_network_interface.jenkins_agent_primary_eni.id
 }

@@ -1,3 +1,4 @@
+
 terraform {
   required_version = ">= 1.5.0"
 
@@ -51,8 +52,8 @@ resource "aws_subnet" "jenkins_public_2" {
 
 resource "aws_subnet" "jenkins_private_1" {
   vpc_id                  = aws_vpc.jenkins_vpc.id
-  cidr_block              = "10.20.20.0/24"
-  availability_zone       = "us-east-1a"
+  cidr_block              = var.private_subnet_1_cidr
+  availability_zone       = var.az_1
   map_public_ip_on_launch = false
 
   tags = {
@@ -62,15 +63,14 @@ resource "aws_subnet" "jenkins_private_1" {
 
 resource "aws_subnet" "jenkins_private_2" {
   vpc_id                  = aws_vpc.jenkins_vpc.id
-  cidr_block              = "10.20.21.0/24"
-  availability_zone       = "us-east-1b"
+  cidr_block              = var.private_subnet_2_cidr
+  availability_zone       = var.az_2
   map_public_ip_on_launch = false
 
   tags = {
     Name = "jenkins-private-2"
   }
 }
-
 
 resource "aws_internet_gateway" "jenkins_igw" {
   vpc_id = aws_vpc.jenkins_vpc.id
@@ -79,7 +79,6 @@ resource "aws_internet_gateway" "jenkins_igw" {
     Name = "jenkins-igw"
   }
 }
-
 
 resource "aws_route_table" "jenkins_public_rt" {
   vpc_id = aws_vpc.jenkins_vpc.id
@@ -129,7 +128,6 @@ resource "aws_route_table_association" "jenkins_private_2_assoc" {
   subnet_id      = aws_subnet.jenkins_private_2.id
   route_table_id = aws_route_table.jenkins_private_rt.id
 }
-
 
 resource "aws_route_table_association" "jenkins_public_1_assoc" {
   subnet_id      = aws_subnet.jenkins_public_1.id
@@ -198,11 +196,9 @@ resource "aws_security_group" "jenkins_efs_sg" {
   }
 }
 
-
 ##########################################
 # JENKINS ECS TASK SECURITY GROUP (PRIVATE)
 ##########################################
-
 resource "aws_security_group" "jenkins_task_sg" {
   name        = "jenkins-task-sg"
   description = "Private SG for Jenkins ECS tasks"
@@ -237,8 +233,6 @@ resource "aws_security_group" "jenkins_task_sg" {
   }
 }
 
-
-
 # ─────────────────────────────────────────────────────────────
 # Call the Jenkins Fargate module
 # ─────────────────────────────────────────────────────────────
@@ -258,16 +252,16 @@ module "jenkins_fargate" {
     aws_subnet.jenkins_public_2.id
   ]
 
-
   alb_sg_id  = aws_security_group.jenkins_alb_sg.id
   task_sg_id = aws_security_group.jenkins_task_sg.id
   efs_sg_id  = aws_security_group.jenkins_efs_sg.id
 
-
-  jenkins_fargate_cpu    = var.jenkins_fargate_cpu
-  jenkins_fargate_memory = var.jenkins_fargate_memory
-  jenkins_admin_user     = var.jenkins_admin_user
-  jenkins_admin_pass     = var.jenkins_admin_pass
+  jenkins_fargate_cpu          = var.jenkins_fargate_cpu
+  jenkins_fargate_memory       = var.jenkins_fargate_memory
+  jenkins_admin_user           = var.jenkins_admin_user
+  jenkins_admin_pass           = var.jenkins_admin_pass
+  execution_role_policy_arn    = var.execution_role_policy_arn
+  task_role_policy_arn         = var.task_role_policy_arn
 
 
   depends_on = [aws_security_group.jenkins_alb_sg]

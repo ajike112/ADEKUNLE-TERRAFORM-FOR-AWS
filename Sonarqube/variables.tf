@@ -13,15 +13,9 @@ variable "public_subnets" {
   description = "Public subnets"
 }
 
-variable "ecs_cluster_name" {
-  type        = string
-  description = "ECS cluster name"
-}
-
 variable "environment" {
   type        = string
   description = "Environment name"
-  default     = "dev"
 }
 
 variable "db_password" {

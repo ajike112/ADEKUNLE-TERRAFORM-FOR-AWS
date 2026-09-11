@@ -1,3 +1,4 @@
+
 # ECS cluster
 resource "aws_ecs_cluster" "jenkins_cluster" {
   name = "jenkins-ecs-cluster"
@@ -12,7 +13,7 @@ resource "aws_efs_file_system" "jenkins_efs" {
   creation_token = "jenkins-efs"
   encrypted      = true
 
- lifecycle {
+  lifecycle {
     prevent_destroy = true
   }
 
@@ -29,11 +30,9 @@ resource "aws_efs_mount_target" "jenkins_efs_mt" {
   security_groups = [var.efs_sg_id]
 
   lifecycle {
-  create_before_destroy = true
+    create_before_destroy = true
+  }
 }
-
-}
-
 
 # ALB for Jenkins
 resource "aws_lb" "jenkins_alb" {
@@ -51,14 +50,12 @@ resource "aws_lb" "jenkins_alb" {
   }
 }
 
-
 resource "aws_lb_target_group" "jenkins_tg" {
-  name     = "jenkins-tg"
-  port     = 8080
-  protocol = "HTTP"
-  vpc_id   = var.vpc_id
+  name        = "jenkins-tg"
+  port        = 8080
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
   target_type = "ip"
-
 
   health_check {
     path                = "/login"
@@ -108,7 +105,7 @@ resource "aws_iam_role" "jenkins_task_role" {
 
 resource "aws_iam_role_policy_attachment" "jenkins_task_role_policy" {
   role       = aws_iam_role.jenkins_task_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+  policy_arn = var.task_role_policy_arn
 }
 
 # Execution role for pulling image, logs, etc.
@@ -133,7 +130,7 @@ resource "aws_iam_role" "jenkins_execution_role" {
 
 resource "aws_iam_role_policy_attachment" "jenkins_execution_role_policy" {
   role       = aws_iam_role.jenkins_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+  policy_arn = var.execution_role_policy_arn
 }
 
 # CloudWatch log group
@@ -146,9 +143,6 @@ resource "aws_cloudwatch_log_group" "jenkins_logs" {
   }
 }
 
-################################
-# EFS ACCESS POINT RESOURCE
-###############################
 resource "aws_efs_access_point" "jenkins_ap" {
   file_system_id = aws_efs_file_system.jenkins_efs.id
 
@@ -160,18 +154,16 @@ resource "aws_efs_access_point" "jenkins_ap" {
   root_directory {
     path = "/jenkins"
     creation_info {
-      owner_uid = 1000
-      owner_gid = 1000
+      owner_uid   = 1000
+      owner_gid   = 1000
       permissions = "0755"
     }
   }
 }
 
-
 # ECS task definition for Jenkins
 resource "aws_ecs_task_definition" "jenkins_fargate_task" {
-  family = "jenkins-fargate-task"
-
+  family                   = "jenkins-fargate-task"
   revision                 = null
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
@@ -209,7 +201,6 @@ resource "aws_ecs_task_definition" "jenkins_fargate_task" {
           readOnly      = false
         }
       ]
-
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -225,13 +216,12 @@ resource "aws_ecs_task_definition" "jenkins_fargate_task" {
     name = "jenkins-home"
 
     efs_volume_configuration {
-      file_system_id          = aws_efs_file_system.jenkins_efs.id
-      transit_encryption      = "ENABLED"
-      root_directory          = ""
+      file_system_id     = aws_efs_file_system.jenkins_efs.id
+      transit_encryption = "ENABLED"
+      root_directory     = ""
       authorization_config {
         access_point_id = aws_efs_access_point.jenkins_ap.id
         iam             = "ENABLED"
-
       }
     }
   }
@@ -243,11 +233,9 @@ resource "aws_ecs_service" "jenkins_service" {
   cluster         = aws_ecs_cluster.jenkins_cluster.id
   task_definition = aws_ecs_task_definition.jenkins_fargate_task.arn
 
-  launch_type     = "FARGATE"
-  desired_count   = 1
-  enable_execute_command = true
-  
-# Allow Jenkins time to boot before ALB health checks
+  launch_type                    = "FARGATE"
+  desired_count                  = 1
+  enable_execute_command         = true
   health_check_grace_period_seconds = 180
 
   network_configuration {

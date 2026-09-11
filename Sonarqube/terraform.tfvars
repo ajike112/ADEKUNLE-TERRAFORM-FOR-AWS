@@ -10,7 +10,4 @@ public_subnets = [
   "subnet-0db48ff22c23537fe"
 ]
 
-ecs_cluster_name = "sonarqube-ecs-cluster"
-
 db_password = "Blessed112!"
-

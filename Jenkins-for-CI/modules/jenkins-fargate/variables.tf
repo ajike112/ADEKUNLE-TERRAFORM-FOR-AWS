@@ -1,3 +1,4 @@
+
 variable "aws_region" {
   type        = string
   description = "AWS region"
@@ -7,8 +8,6 @@ variable "vpc_id" {
   type        = string
   description = "VPC ID for Jenkins"
 }
-
-
 
 variable "alb_sg_id" {
   type        = string
@@ -24,7 +23,6 @@ variable "efs_sg_id" {
   type        = string
   description = "Security group ID for EFS mount targets"
 }
-
 
 variable "jenkins_fargate_cpu" {
   type        = number
@@ -56,3 +54,12 @@ variable "public_subnet_ids" {
   type        = list(string)
 }
 
+variable "task_role_policy_arn" {
+  type        = string
+  description = "IAM policy ARN for Jenkins task role"
+}
+
+variable "execution_role_policy_arn" {
+  type        = string
+  description = "IAM policy ARN for Jenkins execution role"
+}
