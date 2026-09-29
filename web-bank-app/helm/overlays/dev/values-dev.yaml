@@ -1,0 +1,5 @@
+# Dev overlay. The Jenkins pipeline rewrites image.tag on every successful build.
+replicaCount: 1
+
+image:
+  tag: "latest"
